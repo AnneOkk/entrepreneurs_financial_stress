@@ -1,0 +1,392 @@
+---
+title: "III_observational"
+author: "Anne"
+date: "12/20/2021"
+output: html_document
+---
+
+# III Observational
+
+
+## Preparation
+
+```{r include=TRUE}
+library(stringr)
+library(zoo)
+library(lubridate)
+library(sjlabelled)
+
+# rename columns T1 
+
+names(observational_finstrain) <- paste0("T1",names(observational_finstrain))
+names(observational_finstrain) <- gsub("quit1_1", "quitint_1", names(observational_finstrain))
+names(observational_finstrain) <- gsub("quit2_1", "quitint_2", names(observational_finstrain))
+names(observational_finstrain) <- gsub("quit2_2", "quitint_3", names(observational_finstrain))
+names(observational_finstrain) <- gsub("(PANA)_([6-9]|10)", "PA_\\2", names(observational_finstrain))
+names(observational_finstrain) <- gsub("(PANA_)([1-5])", "NA_\\2", names(observational_finstrain))
+
+names(observational_finstrain_T2) <- gsub("quit_1_1", "quitint_1", names(observational_finstrain_T2))
+names(observational_finstrain_T2) <- gsub("quit_2_1", "quitint_2", names(observational_finstrain_T2))
+names(observational_finstrain_T2) <- gsub("quit_2_2", "quitint_3", names(observational_finstrain_T2))
+
+obs_df <- left_join(observational_finstrain, observational_finstrain_T2, by = c("T1PROLIFIC_PID" = "PROLIFIC_PID"))
+
+# recode columns
+obs_df <- obs_df %>% 
+  dplyr::mutate_at(vars(dplyr::matches(c("employable_2", "affcom_1", "affcom_2"))), ~ (.*(-1)+6)) %>% 
+  dplyr::mutate(T2_jobsat_1 =  T2_jobsat_1*(-1)+7)
+
+
+# remove test data
+obs_df <- subset(obs_df, nchar(as.character(obs_df$T1PROLIFIC_PID)) >= 15) %>% drop_na(T1occ)
+
+# make age 
+obs_df$T1age_1 <- as.numeric(names(attr(obs_df$T1age_1,"labels")[match(obs_df$T1age_1,attr(obs_df$T1age_1,"labels"))]))
+
+
+# make time since business foundation
+timediff <- function() {
+  year_n <- as.numeric(names(attr(obs_df$T1year_1,"labels")[match(obs_df$T1year_1,attr(obs_df$T1year_1,"labels"))]))
+  month_n <- as.numeric(obs_df$T1month_1 %>% remove_all_labels(.))
+  time <- as.yearmon(paste(year_n, month_n), "%Y %m") %>% as_date(.)
+  record <- as.yearmon(obs_df$T1RecordedDate, "%Y %m") %>% as_date(.)
+  difftime <- difftime(record, time, UTC,
+         units = c("days"))
+  return(difftime)
+}
+
+obs_df$timebuiss <- timediff()
+
+
+# deselect not important columns
+obs_df <- obs_df  %>%
+dplyr::select(-dplyr::matches("Always|bye|group|Status|IPAddress|Progress|Duration|Finished|ResponseId|
+                                                         LastName|FirstName|entEmail|Reference|Latitude|Longitude|Channel|UserLang|
+                                                         Consent|Q28"))
+
+# Replace occ status
+obs_df <- obs_df %>% remove_all_labels(.) %>%
+     mutate(occ = case_when(T1occ_3_TEXT=="Business owner but main role is home maker|Business owner and student|Student with business
+                            |student business owner|self employed and carer for my daughter|Self-employed and student"~ 2,
+                            TRUE ~ occ))
+
+# check for duplicates
+obs_df <- obs_df[!(duplicated(obs_df$T1PROLIFIC_PID)), ]
+
+# basis sample (no filters)
+obs_df<- obs_df %>% drop_na(T1occ)
+cat("Number of participants in the original dataset:", nrow(obs_df), "\n")
+
+# remove not entrepreneur
+obs_df <- obs_df[!(obs_df$T1occ ==3), ]
+cat("Number of participants after occupational status != entrepreneurs removed:", nrow(obs_df) , "\n")
+
+
+# delete not involved in founding
+obs_df <- obs_df[!(obs_df$T1found ==2), ]
+cat("Number of participants after not involved in founding removed:", nrow(obs_df), "\n")
+
+
+# Attention checks T1
+## create attention fails df 
+attention_fail <- function() {
+  attention_f <- obs_df[(obs_df$T1chal_3 != 4) | (obs_df$T1threat_4 != 4) | (obs_df$T1satis_4 != 2),]
+  ID_vals <- data.frame(table(attention_f$T1ID))
+  Rows_fails <- attention_f$T1ID %in% ID_vals[ID_vals$Freq > 0,1]
+  Att_fails <- attention_f[Rows_fails,]
+  return(Att_fails)
+}
+
+Att_fails <- attention_fail() # 8 excluded
+
+## exclude attention fails (one or more fails)
+t1 <- obs_df %>% dplyr::select(-dplyr::matches("T2_")) %>% drop_na(occ) %>% .[!(.$ID %in% Att_fails$ID),] %>% dplyr::select(-T1chal_3,-T1threat_4,-T1satis_4)
+
+cat("Number of attention fails T1:", (nrow(obs_df) -nrow(t1)) , "\n")
+
+# Number of T2 participants
+t2 <- obs_df[!(is.na(obs_df$T2_PID)), ] %>% select(matches("T2_"))
+
+cat("Number of T2 participants:", nrow(t2), "\n")
+
+# Quit between last survey and now
+t2 <- t2[!(t2$T2_quit == 2), ]
+cat("Number of T2 participants after excluding those who quit their business between May 2021 and now (Dec 2021): ", nrow(t2), "\n")
+
+### Attention checks T2
+## create attention fails df 
+attention_fail <- function() {
+  attention_f <- t2[(t2$T2_lifesat_4 != 2) | (t2$T2_vita_5 != 3) | (t2$T2_entresat_4 != 6),]
+  ID_vals <- data.frame(table(attention_f$T2_PID))
+  Rows_fails <- attention_f$T2_PID %in% ID_vals[ID_vals$Freq > 0,1]
+  Att_fails <- attention_f[Rows_fails,]
+  return(Att_fails)
+}
+
+Att_fails <- attention_fail() 
+
+## exclude attention fails (one or more fails)
+t2<- t2 %>% .[!(.$T2_PID %in% Att_fails$T2_PID),] %>% dplyr::select(-T2_lifesat_4 ,-T2_vita_5, -T2_entresat_4)
+
+cat("Number of attention fails T2:  ", nrow(Att_fails) , "\n")
+
+# join the two attention checked data frames 
+obs_df <- left_join(t1, t2, by = c("PROLIFIC_PID" = "T2_PID"))
+
+cat("Sample size T1: ", nrow(obs_df), "\n")
+cat("Sample size T2: ", nrow(t2), "\n")
+
+
+names(obs_df) <- gsub("T2_", "T2", names(obs_df))
+
+
+```
+
+## Correlations and reliabilities 
+
+```{r}
+library(multicon)
+library(sjlabelled)
+library(data.table)
+
+comp_dat <- obs_df %>%
+  dplyr::select(dplyr::matches("cope_1|cope_2|cope_3|emocope|finstrain_\\d$|chal|threat|satis|quitint|^NA|^PA|employable|affcom|concom|lifesat|vita|normcom|entresat|jobsat")) %>% remove_all_labels(.) %>% .[, !sapply(., is.character)]
+
+demo_dat <- obs_df %>%
+  dplyr::select(dplyr::matches("occ|employees|coown|indu|locat|age_1|gender|lang|edu|timeb|quitfinstrain|T2currententre|T2quit")) %>% dplyr::select(-dplyr::matches("TEXT")) %>% remove_all_labels(.)
+
+demo_dat$timebuiss <- as.numeric(demo_dat$timebuiss)
+
+alph_dat <- comp_dat
+
+comp_split <- comp_dat %>%
+  split.default(sub("_.*", "", names(comp_dat))) 
+
+alph_split <- alph_dat %>%
+  split.default(sub("_.*", "", names(alph_dat))) 
+
+comp <- purrr::map(comp_split, ~ multicon::composite(.x, nomiss = 0.8), data = .x) %>% as.data.frame(.)
+alph <- purrr::map(alph_split, ~ psych::alpha(.x), data = .x) %>%
+  purrr::map(~ .x$total)
+
+# add demos
+comp_df <- cbind(comp, demo_dat) %>% .[, !sapply(., is.character)]
+
+alph_df <- do.call("rbind", alph) %>% round(., 2)
+
+alph_df %>%
+DT::datatable(
+    extensions = 'Buttons', 
+    options = list(dom = 'Bfrtip', 
+                   buttons = c('excel', "csv"),
+                   pageLength = 20))
+
+cor <- round(cor(comp_df, use="pairwise.complete.obs"), 2)
+
+library(kableExtra)
+
+corstar_select <- data.frame(corstars(comp_df, removeTriangle = "none", result="none"))
+
+
+corstar_select %>%
+  DT::datatable(
+    extensions = 'Buttons', 
+    options = list(dom = 'Bfrtip', 
+                   buttons = c('excel', "csv"),
+                   pageLength = 35,
+                  lengthMenu = c(25, 50, 75, 94)))
+```
+
+
+## Hypotheses tests
+
+### T1 finstrain > T1 commitment > T1 quit
+
+#### Continuance commitment 
+
+```{r include = F}
+library(lavaan)
+
+measurement_c <- function(IV, mediator, DV, controls = F) {
+  measurement_part <- function(...) {
+  params <- list(...)
+  stopifnot(length(params)%%2==0)
+  lefts = params[seq(1,length(params), by=2)]
+  rights = params[seq(2,length(params), by=2)]
+  rights <- Map(paste, rights, collapse="+")
+  paste(paste0(lefts, " =~", rights), collapse="\n", "\n")
+  }
+  
+  if(controls == F){
+    meas <- measurement_part(paste0(IV), c(paste0(IV,"_1"), paste0(IV, "_2"), paste0(IV,"_3")),
+                             paste0(mediator), c(paste0(mediator,"_1"), paste0(mediator, "_2"), paste0(mediator,"_3")),
+                             paste0(DV), c(paste0(DV,"_1"), paste0(DV, "_2"), paste0(DV,"_3")))
+    } else {
+    meas <- measurement_part(paste0(IV), c(paste0(IV,"_1"), paste0(IV, "_2"), paste0(IV,"_3")),
+                             paste0(mediator), c(paste0(mediator,"_1"), paste0(mediator, "_2"), paste0(mediator,"_3")),
+                             paste0(DV), c(paste0(DV,"_1"), paste0(DV, "_2"), paste0(DV,"_3")),
+                             "T1employable", c("employable_1", "employable_2", "employable_3"))  
+    
+  }
+    meas
+}
+
+  model_controls <- function(IV, mediator, DV, controls = F) {
+    if (controls == T) {
+      controlinput <- paste('+ T1employable + employees + timebuiss + occ', '\n')
+    } else {
+      controlinput <- paste("", "\n")
+    }
+  model<- paste(measurement_c(IV, mediator, DV, controls = F), 
+        DV, "~ c*", IV, controlinput,
+        mediator, "~ a*", IV, "\n", 
+         DV, "~ b*", mediator, "\n",
+        "ab := a*b", '\n',
+        "total := c + (a*b)")
+ fit <- sem(model, data = obs_df) 
+ sem_tables(fit)
+ summary(fit, fit.measures=TRUE)
+  }
+  
+  
+library("semTable")
+
+```
+```{r include = T}
+model_controls(IV = "T1finstrain",  mediator = "T1concom", DV = "")
+```
+
+```{r}
+model_controls(controls = T, mediator = "affcom")
+
+```
+
+
+
+#### Affective commitment 
+
+```{r eval = F}
+mediation <- function(mediator) {
+  model_controls<- paste(T1quitint, mediator, T1finstrain, #model vars
+               T1employable, # control vars
+               "T1quitint ~ c*T1finstrain", controls, 
+               mediator, "~ a*T1finstrain", '\n',
+               "T1quitint ~ b*", mediator, '\n',
+               "ab := a*b", '\n',
+               "total := c + (a*b)")
+  fit <- sem(model_controls, data = obs_df) 
+summary(fit)
+}
+
+mediation(mediator = T1affcom)
+
+
+model_controls <- paste(T1quitint, T1affcom, T1finstrain, #model vars
+               T1employable, # control vars
+               "T1quitint ~ c*T1finstrain", controls, 
+               "T1affcom ~ a*T1finstrain", '\n',
+               "T1quitint ~ b*T1affcom", '\n',
+               "ab := a*b", '\n',
+               "total := c + (a*b)")
+
+fit <- sem(model_controls, data = obs_df) 
+summary(fit)
+```
+
+
+### T1 finstrain > T2 commitment > T2 quit
+
+#### Continuance commitment 
+
+```{r eval = F}
+model <- ' # measurement part
+           ## model variables
+             T2quit_int =~ T2quitint_1 + T2quitint_2 + T2quitint_3
+             T2_concom =~ T2concom_1 + T2concom_2 + T2concom_3
+             finstrain =~ finstrain_1 + finstrain_2 + finstrain_3
+          
+           ## control variables   
+             T1quit_int =~ quitint_1 + quitint_2 + quitint_3
+             employable =~ employable_1 + employable_2 + employable_3
+             
+           # direct effect
+             T2quit_int ~ c*finstrain + employable + employees + timebuiss + occ + T1quit_int
+             
+           # mediator
+             T2_concom ~ a*finstrain
+             T2quit_int ~ b*T2_concom
+             
+             ab := a*b
+           # total effect
+             total := c + (a*b)
+         '
+fit <- sem(model, data = obs_df) 
+summary(fit)
+
+```
+
+#### Affective commitment 
+
+```{r eval = F}
+model <- ' # measurement part
+           ## model variables
+             T2quit_int =~ T2quitint_1 + T2quitint_2 + T2quitint_3
+             T2affcom =~ T2affcom_1 + T2affcom_2 + T2affcom_3
+             affcom =~ affcom_1 + affcom_2 + affcom_3
+             finstrain =~ finstrain_1 + finstrain_2 + finstrain_3
+          
+           ## control variables   
+             T1quit_int =~ quitint_1 + quitint_2 + quitint_3
+             employable =~ employable_1 + employable_2 + employable_3
+             
+           # direct effect
+             T2quit_int ~ c*finstrain + employable + employees + timebuiss + occ + T1quit_int
+             
+           # mediator
+             T2affcom ~ a*finstrain + affcom
+             T2quit_int ~ b*T2affcom
+             
+             ab := a*b
+           # total effect
+             total := c + (a*b)
+         '
+fit <- sem(model, data = obs_df) 
+summary(fit, fit.measures = TRUE)
+
+modificationindices(fit, sort =T)
+```
+
+### T2 finstrain > T2 Normative commitment > T2 quit
+
+```{r eval = F}
+model <- paste(' # measurement part', '\n', 
+              '## model variables', '\n',
+             'T2quit_int =~ T2quitint_1 + T2quitint_2 + T2quitint_3', '\n',
+             'T2normcom =~ T2normcom_1 + T2normcom_2 + T2normcom_3', '\n',
+             'T2finstrain =~ T2finstrain_1 + T2finstrain_2 + T2finstrain_3', '\n',
+          
+            '## control variables', '\n',   
+             'T1quit_int =~ quitint_1 + quitint_2 + quitint_3', '\n',
+             'employable =~ employable_1 + employable_2 + employable_3', '\n',
+             
+            '# direct effect', '\n', 
+             'T2quit_int ~ c*T2finstrain + employable + employees + timebuiss + occ + T1quit_int', '\n',
+             
+            '# mediator', '\n', 
+             'T2normcom ~ a*T2finstrain', '\n', 
+             'T2quit_int ~ b*T2normcom', '\n', 
+             
+             'ab := a*b', '\n', 
+            '# total effect', '\n', 
+             'total := c + (a*b)', '\n') 
+
+fit <- sem(model, data = obs_df) 
+summary(fit, fit.measures = TRUE)
+
+modificationindices(fit, sort =T)
+
+
+```
+
+## T1 finstrain > T2 concom > T2 quit
+

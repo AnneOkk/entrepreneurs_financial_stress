@@ -1,0 +1,78 @@
+---
+title: "Entrepreneurs_neg_workevents"
+author: "Anne"
+date: "9/28/2020"
+output: html_document
+---
+
+# Packages 
+
+```{r loading_packs, include = F, echo = F}
+knitr::opts_chunk$set(include = F, echo=FALSE, warning=FALSE, message=FALSE)
+
+source("/Users/anne/Dropbox/Studies/Multi paper neg events/remote_functions.R")
+
+packages <- c("mediation", "foreign", "tidyverse","stargazer","multicon", "ggplot2", "plyr", "reshape2", "readxl", 
+              "scales", "grid", "tidyLPA", "Rcpp", "naniar", "dplyr", "car", "mice", 
+              "rstudioapi", "labelled", "modi", "semPlot", "kulife", "knitr", "janitor", "DT", "sjlabelled", "kableExtra", "semoutput")
+
+ipak(packages)
+
+
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+
+```
+
+# Load data 
+
+```{r loading_data, include = FALSE}
+
+options(knitr.table.format = function() {
+  if (knitr::is_latex_output()) 'latex' else 'pandoc'
+})
+
+library(rlang)
+library(tidyverse)
+library(foreign)
+files <- dir(getwd(), pattern = "\\.sav$", full.names = FALSE) 
+df_list <- vector("list", length(files))
+names(df_list) <- files
+
+df_list <- read_in(files)
+
+list2env(df_list,envir=.GlobalEnv)
+
+
+library(magrittr)
+```
+
+```{r, include=FALSE}
+I_students_india <- FALSE
+II_psycorona <- FALSE
+III_observational <- TRUE
+IV_vignette <- FALSE
+```
+
+```{r, child=if (I_students_india) 'I_students_india.Rmd'}
+```
+
+```{r, child=if (II_psycorona) 'II_psycorona.Rmd'}
+```
+
+```{r, child=if (III_observational) 'III_observational.Rmd'}
+```
+
+```{r, child=if (IV_vignette) 'IV_vignette.Rmd'}
+```
+
+
+
+
+
+
