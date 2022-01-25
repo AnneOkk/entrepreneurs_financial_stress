@@ -9,24 +9,18 @@ output: html_document
 
 ## Preparation 
 
-```{r}
+```{r include = TRUE}
 # Rename
 names(PsyCorona) <- gsub("PFS0", "fin_strain0", names(PsyCorona), fixed = TRUE)
 df <- PsyCorona
 
 library("dplyr")
 
-0.5+0.75+0.25+1.0+0.5+0.25+0.75+1.0+0.25+0.75+1.0
-df$w4_employstatus_14
 df_e <- df %>% filter(!is.na(w4_employstatus_14))
-
-df_e$w4_employstatus_14
 
 df_e <-  df_e[!is.na(df_e$w5_SE_quit),] 
 
-library("janitor")
-tabyl(df_e$coded_country, sort = F)
-
+cat("Number of participants in the dataset:", nrow(df_e), "\n")
 
 df_e$coded_country_text <- df_e$coded_country
 
@@ -40,9 +34,12 @@ df_e$SE_start_recode <- as.numeric(names(attr(df_e$w5_SE_start,"labels")[match(d
 df_e$SE_start_recode <- 2020-df_e$SE_start_recode
 
 
+# employees yes or no
+df_e$w5_SE_employees_dich <- ifelse(df_e$w5_SE_employees_1 > 0, 1, 0)
+```
 
-## Correlations and reliabilities 
 
+```{r}
 library(multicon)
 names(df_e)
 
@@ -53,7 +50,7 @@ comp_dat <- df_e %>%
   dplyr::select(probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03) 
 
 comp_singleitem <- df_e %>%
-  dplyr::select(w5_SE_quit,w5_lifeSat, SE_start_recode, age, gender, edu, coded_country_num) 
+  dplyr::select(w5_SE_quit,w5_lifeSat, SE_start_recode, age, gender, edu, coded_country_num, w5_fin_strain01, w5_SE_employees_dich) 
 
 alph_dat <- comp_dat
 
@@ -71,28 +68,44 @@ alph <- purrr::map(alph_split, ~ psych::alpha(.x), data = .x) %>%
 comp_df <- as.data.frame(do.call("cbind", comp))
 alph_df <- do.call("rbind", alph) %>% round(., 2)
 
+```
+
+## Reliabilities
+
+```{r include = TRUE}
+## Correlations and reliabilities 
+
 alph_df %>%
 DT::datatable(
     extensions = 'Buttons', 
     options = list(dom = 'Bfrtip', 
                    buttons = c('excel', "csv"),
-                   pageLength = 20))
+                   pageLength = 15))
+```
 
+## Correlations
+
+```{r include = TRUE}
 df_e$w7_employstatus_11[is.na(df_e$w7_employstatus_11)] <- 0
 df_e$w7_employstatus_12[is.na(df_e$w7_employstatus_12)] <- 0
 
 df_e <- cbind(df_e, comp_df)
 
-library(sjlabelled)
 comp_df <- cbind(comp_df, comp_singleitem) %>% remove_all_labels(.)
 
 #comp_df$date_diff <- as.numeric(comp_df$date_diff)
 
 cor <- round(cor(comp_df, use="pairwise.complete.obs"), 2)
 
-library(kableExtra)
+Mean <- round(colMeans(comp_df, na.rm =T),2)
+SD <- round(apply(comp_df, 2, sd, na.rm =T),2)
 
-corstar_select <- data.frame(corstars(comp_df, removeTriangle = "upper", result="none"))
+mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
+
+library(dplyr)
+
+corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df, removeTriangle = "none", result="none")))  %>%
+  dplyr::mutate(across(everything(), as.character))
 
 
 corstar_select %>%
@@ -102,23 +115,11 @@ corstar_select %>%
                    buttons = c('excel', "csv"),
                    pageLength = 35,
                   lengthMenu = c(25, 50, 75, 94)))
+```
 
 
+```{r eval = FALSE}
 ## Make table 
-
-comp_df$w5_SE_start
-
-Mean <- round(colMeans(comp_df, na.rm =T),2)
-SD <- round(apply(comp_df, 2, sd, na.rm =T),2)
-
-mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
-
-library(dplyr)
-
-corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df, removeTriangle = "upper", result="none")))  %>%
-  dplyr::mutate(across(everything(), as.character))
-
-  
 rownames(corstar_select) <- c("1. Financial strain", "2. Problem-focused coping", "3. Quit intention", 
                               "4. Life satisfaction", "5. Founding date", "6. Age",
                               "7. Gender", "8. Education", "9. Country of origin")
@@ -130,21 +131,17 @@ colnames(corstar_select) <- c("Mean", "SD", "1.", "2.", "3.",
 library(xtable)
 print(xtable(corstar_select, type = "latex"), file = "cor_comp_psycorona.tex")
 
-comp_df$w5_SE_quit
-
-
 ## Sample characteristics
-
-
 tabyl(comp_df$gender, sort = F)
 names(comp_df)
 
 tabyl(comp_df$age, sort = F)
 
 tabyl(comp_df$coded_country_num, sort = F)
+```
 
 
-
+```{r eval = FALSE}
 ## Impute missing data 
 names(df_e)
 df_e_impute <- df_e %>% remove_all_labels(.) %>% select(matches("w5_SE_quit|w5_SE_employees_1|w5_lifeSat|w7_lifeSat|age|gender|edu|SE_start_recode|coded_country_num|T1probsolv_center|T1finstrain_center"))
@@ -157,202 +154,71 @@ df_e_impute <- complete(imputed_Data,2)
 
 ```
 
-## Mediation model 
+## Hypotheses tests
 
-```{r}
-library(lavaan)
-set.seed(1234)
-model <- ' # direct effect
-             w7_lifeSat ~ c*fin_strain + w5_lifeSat
-           # mediator
-             w5_SE_quit ~ a*fin_strain
-             w7_lifeSat ~ b*w5_SE_quit
-             ab := a*b
-           # total effect
-             total := c + (a*b)
-         '
-fit <- sem(model, data = df_e) 
-summary(fit)
+## Potential moderators
 
-names(df_e)
+* Employer status
+* Business age 
+
+### Cross-sectional
+
+#### T2 finstrain > T2 quit 
+
+* with control variables 
+
+```{r include = TRUE}
+model <- lm(w5_SE_quit ~ w5_fin_strain01 + w5_SE_employees_dich + SE_start_recode+  age + gender + edu + coded_country_num, data = df_e)
+pander(summary(model))
 ```
 
-## Coping as a moderator of the effects of financial strain on T2 intention to quit
+#### T2 finstrain * employer status > T2 quit 
 
-### T5 Finstrain * T5 ProbSolve > T5 Quit 
+* with control variables 
 
-
-```{r}
-library(semTools)
-library(lavaan)
-names(df_e)
-
-df_e$w5_fin_strain01_scale <- scale(df_e$w5_fin_strain01, center = TRUE, scale = TRUE) 
-df_e$w5_probSolving01_scale <- scale(df_e$w5_probSolving01, center = TRUE, scale = TRUE) 
-
-model1 <- lm(w5_SE_quit ~  w5_fin_strain01_scale, data = df_e)
-model2 <- lm(w5_SE_quit ~  w5_fin_strain01_scale + w5_probSolving01_scale, data = df_e)
-model3 <- lm(w5_SE_quit ~  w5_fin_strain01_scale*w5_probSolving01_scale, data = df_e)
-
-summary(model1)
-summary(model2)
-summary(model3)
-
-anova(model1, model3)
-
-
-modelsatis <- lm(w5_lifeSat ~  w5_fin_strain01_scale, data = df_e)
-summary(modelsatis)
-
-names(df_e)
-
-df_e$w5_SE_start
-
+```{r include = TRUE}
+model <- lm(w5_SE_quit ~ w5_fin_strain01*w5_SE_employees_dich + SE_start_recode+  age + gender + edu + coded_country_num, data = df_e)
+pander(summary(model))
 ```
 
-### T1 Finstrain * T1 ProbSolve > T5 Quit 
+#### T2 finstrain * business age > T2 quit 
 
-```{r include = T, echo = T}
-library(semTools)
-names(df_e)
-df_e$T1probsolv_center <- scale(df_e$probSolving, center = T, scale = F)
-df_e$T1finstrain_center <- scale(df_e$fin_strain, center = T, scale = F)
-df_e$SE_start_recode_scale <- scale(df_e$SE_start_recode, center = T, scale = F)
+* with control variables 
 
-
-model0 <- lm(w5_SE_quit ~ w5_SE_start + age + gender + edu + coded_country_num, data = df_e)
-model1 <- lm(w5_SE_quit ~  T1finstrain_center + T1probsolv_center + w5_SE_start + age + gender + edu + coded_country_num, data = df_e)
-model2 <- lm(w5_SE_quit ~  T1finstrain_center + T1probsolv_center + T1finstrain_center:T1probsolv_center + w5_SE_start + age + gender + edu + coded_country_num, data = df_e)
-model3 <- lm(w5_SE_quit ~  T1finstrain_center + SE_start_recode_scale + T1finstrain_center:SE_start_recode_scale  + age + gender + edu + coded_country_num, data = df_e)
-
-summary(model0)
-summary(model1)
-summary(model2)
-summary(model3)
-df_e$SE_start_recode
-
-
-# Step 1
-  
-p <- (Regressionp(model0))
-pR <- summary(model0)$r.squared
-
-V1 <- c(summary(model0)$coefficients[,4], p)
-B <- c(summary(model0)$coefficients[,1], pR)
-
-
-M0 <- as.data.frame(cbind(V1, B))  %>% 
-       mutate(V1 = case_when(V1 <=.001 ~ "***", 
-                             V1 <=.01 ~ "**",
-                             V1 <=.05 ~ "*"))
-
-
-Predictors <- c("Intercept", "Founding date", "Age", "Gender", "Education", "Country", "$R^2$")
-
-M0$B <- as.numeric(M0$B) %>% round(., 2)
-
-M0$B <- paste3(M0$B, M0$V1)
-M0 <- M0[-1, -c(1,2, 4, 5, 6)] %>% as.data.frame(.)
-
-library("QuantPsyc")
-beta <- lm.beta(model0) %>% as.data.frame(.)
-rows <- nrow(beta)
-beta[rows+1,] <- NA
-beta$. <- round(beta$., 2)
-
-library("berryFunctions")
-M0 <- insertRows(M0, 1 , new =  NA)
-M0 <- insertRows(M0, 1 , new =  NA)
-M0 <- insertRows(M0, 1 , new =  NA)
-
-# Step 1
-  
-p <- (Regressionp(model1))
-pR <- summary(model1)$r.squared
-
-V1 <- c(summary(model1)$coefficients[,4], p)
-B <- c(summary(model1)$coefficients[,1], pR)
-
-
-M1 <- as.data.frame(cbind(V1, B))  %>% 
-       mutate(V1 = case_when(V1 <=.001 ~ "***", 
-                             V1 <=.01 ~ "**",
-                             V1 <=.05 ~ "*"))
-
-
-M1$B <- as.numeric(M1$B) %>% round(., 2)
-
-M1$B <- paste3(M1$B, M1$V1)
-M1 <- M1[-1,-1] %>% as.data.frame(.)
-
-M1 <- insertRows(M1, 3 , new =  NA)
-M0
-names(M1) <- "Step2"
-
-
-# Step 2
-  
-p <- (Regressionp(model2))
-pR <- summary(model2)$r.squared
-
-V1 <- c(summary(model2)$coefficients[,4], p)
-B <- c(summary(model2)$coefficients[,1], pR)
-
-
-M2 <- as.data.frame(cbind(V1, B))  %>% 
-       mutate(V1 = case_when(V1 <=.001 ~ "***", 
-                             V1 <=.01 ~ "**",
-                             V1 <=.05 ~ "*"))
-
-
-M2$B <- as.numeric(M2$B) %>% round(., 2)
-
-M2$B <- paste3(M2$B, M2$V1)
-M2 <- M2[-1,-1] %>% as.data.frame(.)
-
-
-M2 <- M2[c(1,2,8, 3:7, 9),] %>% as.data.frame(.)
-names(M2) <- "Step3"
-
-Psycor <- cbind(M0, M1, M2)
-
-summary(model2)
-
-
-
-Predictors <- c("Financial strain", "Prob. coping", "Financial strain \\times Prob. coping", "Founding date", "Age", "Gender", "Education", "Country of origin", "$R^2$")
-
-Psycor <- cbind(Predictors, Psycor)
-
-
-
+```{r include = TRUE}
+model <- lm(w5_SE_quit ~ w5_fin_strain01*SE_start_recode + w5_SE_employees_dich +  age + gender + edu + coded_country_num, data = df_e)
+pander(summary(model))
 ```
 
-#### Simple slopes
+### Lagged
 
-```{r}
-library(emmeans)
-library(interactions)
-effa <- round(mean(df_e$T1probsolv_center) + sd(df_e$T1probsolv_center),1)
-eff <- round(mean(df_e$T1probsolv_center),1)
-effb <- round(mean(df_e$T1probsolv_center) - sd(df_e$T1probsolv_center),1)
+#### T1 finstrain > T2 quit 
 
+* with control variables 
 
-mylist <- list(T1finstrain_center=seq(-2,2,by=0.5),T1probsolv_center=c(effb,eff,effa))
+```{r include = TRUE}
+model <- lm(w5_SE_quit ~ fin_strain + SE_start_recode + w5_SE_employees_dich +  age + gender + edu + coded_country_num, data = comp_df)
+pander(summary(model))
 
-emmip(model2,T1probsolv_center~T1finstrain_center,at=mylist, CIs=TRUE, xlab = "Financial strain", ylab = "Intention to quit", tlab = "Prob. coping")
-
-mylist <- list(T1probsolv_center=c(effb,eff,effa)) 
-emtrends(model2, ~T1probsolv_center, var="T1finstrain_center",at=mylist)
-
-
-pdf(file = "simple_slopes_psycor_quit.pdf",
-     colormodel = "grey")
-
-interact_plot(model2, pred = T1finstrain_center, modx = T1probsolv_center, x.label = "Financial strain", y.label = "Intention to quit", legend.main = "Prob. coping") + ylim(-3, 0) + xlim(-2, 2)
-
-dev.off()
-
-range(df_e$fin_strain)
-mean(df_e$w5_SE_quit)
+names(comp_df)
 ```
+
+#### T1 finstrain * employer status > T2 quit 
+
+* with control variables 
+
+```{r include = TRUE}
+model <- lm(w5_SE_quit ~ fin_strain*w5_SE_employees_dich + SE_start_recode + age + gender + edu + coded_country_num, data = comp_df)
+pander(summary(model))
+```
+
+#### T1 finstrain * business age > T2 quit 
+
+* with control variables 
+
+```{r include = TRUE}
+model <- lm(w5_SE_quit ~ fin_strain*SE_start_recode + w5_SE_employees_dich +  age + gender + edu + coded_country_num, data = comp_df)
+pander(summary(model))
+```
+
+

@@ -1,37 +1,65 @@
 ---
-title: "Entrepreneurs_neg_workevents"
+title: "Entrepreneurs' financial strain"
 author: "Anne"
-date: "9/28/2020"
-output: html_document
+date: '`r Sys.Date()`'
+bibliography: ../refs/refs.bib
+csl: ../refs/apa7.csl
+mainfont: Times New Roman
+output:
+  html_document:
+    toc: true
+    theme: united 
+    toc_depth: 5
+    toc_float: true
 ---
 
-# Packages 
+# Overview
+
+An environmental condition will not be a source of harm or benefit unless it confronts persons or groups having motivational and cognitive characteristics that make them vulnerable to that particular condition [@Lazarus1984].
+One of the most harmful conditions endagering entrepreneurial goals is the occurrence of financial strain. 
+Entrepreneurs often make strong personal and financial sacrifices to get their business off the ground [@DeTienne2010; @Cardon2005; @Gorgievski2010]. 
+The occurrence of financial strain endangers their ability to pay for their bills, invest in new material, and develop the business further. 
+Moreover, it signals the non-achievement of business success, thus obstructing the achievement of valued entrepreneurial goals [@Berrill2020]. \
+
+Financial problems represent one of the main cause of involuntary business closure [e.g., @Gorgievski2010]. 
+In contrast to voluntary exit, which entails considerations to sell or transfer a prosperous firm, involuntary exit is motivated by difficulties to achieve business success [@Justo2015a].
+Financial strain limits entrepreneurs' scope for action and undermines the achievement of business goals, potentially leading to exit due to poor financial performance [@LePine.2005; @DeTienne2010].
+Before entrepreneurs exit their firm, they develop quit intentions. 
+As pointed out by @Keasey2015, understanding the drivers of involuntary exit is relevant to prevent premature exit, thus lowering the amount of distress associated with involuntary exit experienced by the entrepreneur. Additionally, if business exit becomes inevitable, understanding its predictors supports effective measures to intervene in the exit process, thus supporting exit decisions to be taken at more appropriate moments. \
+
+Financial strain is often identified as an aspect of firm failure [e.g., @Gorgievski2010; @Keasey2015]. 
+However, financial strain as a contextual stressor and the intention to quit as an indicator of entrepreneurial motivation represent distinct processes. 
+For example, while some entrepreneurs may be inclined to quit their business once financial difficulties arise, others may persist. 
+The first goal of the current research is to provide insight into the relationship between entrepreneurs' financial strain and the intention to quit their business. \
+
+Past research has accumulated evidence on individual-specific, firm-specific, and environmental predictors of entrepreneurial exit intentions [see, e.g., @Wennberg2021]. 
+According to the threshold model of entrepreneurial exit [@Gimeno1997], exit considerations are centrally driven by the perceived benefits associated with the current entrepreneurial occupation and costs associated with switching to another position.
+Accordingly, next to investigating direct links, we seek to shed light on the role of entrepreneurs' employer status and business age as firm-specific characteristics (NOT SO SURE ABOUT THIS PART YET, DISCUSS) that have been identified as predictors of entrepreneurial exit due to financial difficulties in past research [e.g., @DeTienne2012]. \
+
+Finally, the third goal of the current study is to enhance our understanding of the motivational mechanisms that explain the relationship between entrepreneurs' financial strain as a stressor endangering business sucess and the intention to quit their business.
+Specifically, based on integrative models of work commitment [@Meyer2004], we suggest affective occupational commitment as the emotional attachment to and identification with the entrepreneurial job role and continuance occupational commitment as the perceived costs of switching occuprational roles, to act as mediators of the effectrs of financial strain on entrepreneurs' intention to quit [@Meyer2004]. 
+
 
 ```{r loading_packs, include = F, echo = F}
+
+source("../R/remote_functions.R")
+# Packages 
 knitr::opts_chunk$set(include = F, echo=FALSE, warning=FALSE, message=FALSE)
 
-source("/Users/anne/Dropbox/Studies/Multi paper neg events/remote_functions.R")
 
 packages <- c("mediation", "foreign", "tidyverse","stargazer","multicon", "ggplot2", "plyr", "reshape2", "readxl", 
               "scales", "grid", "tidyLPA", "Rcpp", "naniar", "dplyr", "car", "mice", 
-              "rstudioapi", "labelled", "modi", "semPlot", "kulife", "knitr", "janitor", "DT", "sjlabelled", "kableExtra", "semoutput")
+              "rstudioapi", "labelled", "modi", "semPlot", "kulife", "knitr", "janitor", "DT", "sjlabelled", "kableExtra",
+              "semoutput", "pander")
+
+
 
 ipak(packages)
-
-
-ipak <- function(pkg){
-  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
-  if (length(new.pkg)) 
-    install.packages(new.pkg, dependencies = TRUE)
-  sapply(pkg, require, character.only = TRUE)
-}
-
-
 ```
 
-# Load data 
 
 ```{r loading_data, include = FALSE}
+# Load data 
 
 options(knitr.table.format = function() {
   if (knitr::is_latex_output()) 'latex' else 'pandoc'
@@ -40,26 +68,33 @@ options(knitr.table.format = function() {
 library(rlang)
 library(tidyverse)
 library(foreign)
-files <- dir(getwd(), pattern = "\\.sav$", full.names = FALSE) 
+setwd('../..')
+files <- dir(paste0(getwd(),"/data/"), pattern = "\\.sav$", full.names = FALSE) 
+
+
 df_list <- vector("list", length(files))
 names(df_list) <- files
 
-df_list <- read_in(files)
+df_list <- read_in(files, directory = "data/")
 
 list2env(df_list,envir=.GlobalEnv)
 
 
 library(magrittr)
+
 ```
 
 ```{r, include=FALSE}
 I_students_india <- FALSE
-II_psycorona <- FALSE
+II_psycorona <- TRUE
 III_observational <- TRUE
-IV_vignette <- FALSE
+IV_vignette <- TRUE
 ```
 
 ```{r, child=if (I_students_india) 'I_students_india.Rmd'}
+```
+
+```{r, child=if (IV_vignette) 'IV_vignette.Rmd'}
 ```
 
 ```{r, child=if (II_psycorona) 'II_psycorona.Rmd'}
@@ -68,8 +103,22 @@ IV_vignette <- FALSE
 ```{r, child=if (III_observational) 'III_observational.Rmd'}
 ```
 
-```{r, child=if (IV_vignette) 'IV_vignette.Rmd'}
-```
+## Additional research findings (will be integrated later)
+
+* A simplet t-est revealed that the solo self-employed individuals report lower levels of affective commitment to their business than employer entrepreneurs [@Schummer2019]
+* A second implication is related to the first: those who started earlier were able to do a better job of anticipating their future entrepreneurial pursuits than were those who started later, mainly because they were sensitized to entrepreneurship as a career possibility at a much earlier age. Early planning for an entrepreneurial career is correlated with longer careers not just because they start earlier but because they last longer [@Ronstadt1986]
+* For example, the exit rate for entrepreneurs that enter self-employment from
+unemployed or on a part-time basis is much higher than those that enter from employment
+(Taylor, 1999; Wennberg, Folta, & Delmar, 2006).
+* In order not to confuse statistical relationships,
+studies of entrepreneurial exit need to conduct separate analyses for men and for women.
+
+* For firm age as moderator: Specifically, based on the threshold model of entrepreneurial exit [@Gimeno1997], the longer the entrepreneur is leading the business, the higher will be the costs of switching [@DeTienne2012].
+
+
+# References
+
+<div id="refs"></div>
 
 
 

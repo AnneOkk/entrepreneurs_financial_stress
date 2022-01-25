@@ -4,40 +4,38 @@ author: "Anne"
 date: "12/20/2021"
 output: html_document
 ---
-# IV Vignette
+
+# I Vignette
 
 ## Preparation 
 
 
-```{r}
+```{r include = TRUE}
+# make location variable
 Vignette_finstrain$locat <- (names(attr(Vignette_finstrain$locat,"labels")[match(Vignette_finstrain$locat,attr(Vignette_finstrain$locat,"labels"))]))
 
-
+# only include those with valid ID 
 Vignette_finstrain <- Vignette_finstrain[str_length(Vignette_finstrain$ID) > 19, ]
 
+# assign experimental and control group 
 Vignette_finstrain <- Vignette_finstrain %>% dplyr::mutate(exp_cond = ifelse(group == "control", 1,
                                              ifelse(group == "intervention", 2, NA)))
 
-
+# drop non-valid data 
+Vignette_finstrain <- Vignette_finstrain %>% drop_na(mani_1)
+cat("Number of participants in the original dataset:", nrow(Vignette_finstrain), "\n")
 
 ## Remove non-founders
-
 Vignette_finstrain<-Vignette_finstrain[!(Vignette_finstrain$found==2),]
-
-401-373
-
+cat("Number of participants after not involved in founding removed:", nrow(Vignette_finstrain), "\n")
 
 ### Attention checks
-
-
 vignette_df_fails = Vignette_finstrain %>% dplyr::select(chal_4,threat_4,satis_4)
 
 ## create attention fails df 
 att_1 <- Vignette_finstrain[Vignette_finstrain$chal_4 %in% c(1, 2, 3, 5), ]
 att_2 <- Vignette_finstrain[Vignette_finstrain$threat_4 %in% c(1,2, 3, 5), ]
 att_3 <- Vignette_finstrain[Vignette_finstrain$satis_4 %in% c(1, 3, 4, 5, 6, 7), ]
-
-library(tibble)
 
 attention_fail <- rbind(att_1, att_2, att_3) %>%
   as_tibble(.)
@@ -46,18 +44,17 @@ ID_vals <- data.frame(table(attention_fail$ID))
 Rows_fails <- attention_fail$ID %in% ID_vals[ID_vals$Freq > 0,1]
 Att_fails <- attention_fail[Rows_fails,]
 
-(data.frame(table(Att_fails$ID)))
-
 ## exclude attention fails (two or more fails)
 vignette_df <- Vignette_finstrain[!(Vignette_finstrain$ID %in% Att_fails$ID),]
 
+cat("Number of T1 attention fails (at least one of three attention check items failed):", nrow(unique(Att_fails)) , "\n")
+cat("Number of participants after T1 attention fails removed:", nrow(vignette_df) , "\n")
 
-vignette_df <- vignette_df[ , -which(names(vignette_df) %in% c("chal_4","threat_4", "satis_4"))]
-names(vignette_df)
+vignette_df <- vignette_df[, -which(names(vignette_df) %in% c("chal_4","threat_4", "satis_4"))]
 
-vignette_df$locat
+```
 
-
+```{r}
 ## Reliabilities 
 
 library(multicon)
@@ -94,11 +91,11 @@ comp_dat <- comp_dat %>% dplyr::rename(quit_1 = quit1_1,
                                        quit_2 = quit2_1,
                                        quit_3 = quit2_2,
                                        PA_5 = PANA_10,
-                                       NA_1 = PANA_1,
-                                       NA_2 = PANA_2,
-                                       NA_3 = PANA_3,
-                                       NA_4 = PANA_4,
-                                       NA_5 = PANA_5,
+                                       NA._1 = PANA_1,
+                                       NA._2 = PANA_2,
+                                       NA._3 = PANA_3,
+                                       NA._4 = PANA_4,
+                                       NA._5 = PANA_5,
                                        PA_1 = PANA_6,
                                        PA_2 = PANA_7,
                                        PA_3 = PANA_8,
@@ -110,7 +107,7 @@ library(tidyr)
 matches <- dplyr::matches
 
 
-comp_dat_single_item <- vignette_df %>% dplyr::select(dplyr::matches("finsit|exp_cond|t1timebuiss|coown|indu|age|gender|lang|edu|quitting1|locat"))  %>% remove_all_labels(.) %>% dplyr::select(-matches("UserLanguage|Q52_Page_Submit|Q53_Page_Submit|_TEXT|ifelse|age_1|LocationLatitude|LocationLongitude")) 
+comp_dat_single_item <- vignette_df %>% dplyr::select(dplyr::matches("finsit|exp_cond|t1timebuiss|coown|indu|age|gender|lang|edu|quitting1|locat|quitting "))  %>% remove_all_labels(.) %>% dplyr::select(-matches("UserLanguage|Q52_Page_Submit|Q53_Page_Submit|_TEXT|ifelse|age_1|LocationLatitude|LocationLongitude")) 
 
   
 alph_dat <- comp_dat
@@ -128,94 +125,56 @@ alph <- purrr::map(alph_split, ~ psych::alpha(.x), data = .x) %>%
 # add demos
 comp_df_vig <- as.data.frame(do.call("cbind", comp)) %>% cbind(comp_dat_single_item)
 alph_df_vig <- do.call("rbind", alph) %>% round(., 2)
+```
 
+## Reliabilities 
+
+```{r include = TRUE}
 alph_df_vig %>%
 DT::datatable(
     extensions = 'Buttons', 
     options = list(dom = 'Bfrtip', 
                    buttons = c('excel', "csv"),
-                   pageLength = 20))
-names(vignette_df)
+                   pageLength = 15))
+```
 
 
-
+```{r eval = FALSE}
 ## Impute missing data 
-
 library(mice)
-comp_df_vig <- comp_df_vig %>% dplyr::rename(., "Negaff" = "NA")
 
 imputed_Data <- mice(comp_df_vig, m=5, maxit = 50, method = 'pmm', seed = 500)
 summary(imputed_Data)
 
 completeData <- complete(imputed_Data,2)
 names(comp_df_vig)
-
-
-## Delete NA and participant characteristics 
-
-
-
-names(comp_df_vig)
-
-comp_df_vig <- comp_df_vig %>% drop_na(satis)
-comp_df_vig <- comp_df_vig %>% drop_na(quit)
-comp_df_vig <- comp_df_vig %>% drop_na(Negaff)
-comp_df_vig <- comp_df_vig %>% drop_na(finsit_1)
-comp_df_vig <- comp_df_vig %>% drop_na(finsit_2)
-comp_df_vig <- comp_df_vig %>% drop_na(cope)
-comp_df_vig <- comp_df_vig %>% drop_na(age)
-comp_df_vig <- comp_df_vig %>% drop_na(gender)
-comp_df_vig <- comp_df_vig %>% drop_na(edu)
-
-
-library(janitor)
-tabyl(comp_df_vig$gender)
-
-mean(comp_df_vig$age, na.rm = T)
-sd(comp_df_vig$age, na.rm = T)
-range(comp_df_vig$age, na.rm = T)
-
-
-
-
-tabyl(comp_df_vig$coown)
-
-mean(comp_df_vig$t1timebuiss, na.rm = T)/365
-
+```
 
 ## Correlations
 
-library(kableExtra)
-
-comp_df_vig <- comp_df_vig %>% select(-locat)
+```{r include = TRUE}
+comp_df_vig = comp_df_vig %>% dplyr::select(-dplyr::matches("locat"))
 
 corstar <- data.frame(corstars(comp_df_vig, removeTriangle = "none", result="none"))
 
+## Make table 
+comp_df_vig_corselect  <- comp_df_vig %>% select(exp_cond, cope, mani, NA., quit, satis, finsit_1, finsit_2, age, gender, edu)
 
-corstar %>%
+Mean <- round(colMeans(comp_df_vig , na.rm =T),2)
+SD <- round(apply(comp_df_vig , 2, sd, na.rm =T),2)
+
+mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
+
+corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df_vig, removeTriangle = "none", result="none")))  %>%
+  dplyr::mutate(across(everything(), as.character))
+
+corstar_select %>%
   DT::datatable(
     extensions = 'Buttons', 
     options = list(dom = 'Bfrtip', 
                    buttons = c('excel', "csv"),
-                   pageLength = 35,
+                   pageLength = 15,
                   lengthMenu = c(25, 50, 75, 94)))
-
-
-
-## Make table 
-
-comp_df_vig_corselect  <- comp_df_vig %>% select(exp_cond, cope, mani, Negaff, quit, satis, finsit_1, finsit_2, age, gender, edu)
-
-
-Mean <- round(colMeans(comp_df, na.rm =T),2)
-SD <- round(apply(comp_df, 2, sd, na.rm =T),2)
-
-mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
-
-library(dplyr)
-
-corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df, removeTriangle = "upper", result="none")))  %>%
-  dplyr::mutate(across(everything(), as.character))
 
   
 #rownames(corstar_select) <- c("1. Financial strain", "2. Problem-focused coping", "3. Quit intention", 
@@ -235,370 +194,53 @@ corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df, removeTriangle = "
 
 ## get list of participants for blocklist
 
-paste0( vignette_df$ID, collapse=",")
+#paste0( vignette_df$ID, collapse=",")
 
 ## Recode coping measurement
 comp_df_vig <- comp_df_vig %>% mutate(cope = cope-5)
-
-names(comp_df_vig)
-
 ```
 
+## Potential moderators
 
-## Hypotheses tests
+* Cognitive appraisal (challenge and threat)
+* Coping style (problem- and emotion-focused)
+* Coownership
+* Business age 
 
-### Hypo 1
+## Hypothesis tests
+
+* First, we test the direct effect of perceived financial strain on entrepreneurs' intention to quit. 
+
+### Fin. strain > Quit intention 
+
+* with control variables
+
+```{r include = TRUE}
+model2 <- lm(quit ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
+pander(summary(model2))
+```
+
+### Fin. strain * business age > Quit intention 
+
+* moderation by business/ entrepreneurial characteristics 
+* with control variables
+
+```{r include = TRUE}
+model2 <- lm(quit ~  exp_cond*t1timebuiss + finsit_1 + finsit_2 + age + gender + edu + coown, data = comp_df_vig)
+pander(summary(model2))
+```
 
 ```{r}
-model2 <- lm(quit ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-summary(model2)
-names(completeData)
-```
-
-### Hypo 2
-
-```{r}
-model2 <- lm(satis ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-summary(model2)
-names(completeData)
-```
+model2 <- lm(NA. ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
+pander(summary(model2))
+model2 <- lm(PA ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
+pander(summary(model2))
+model2 <- lm(satis ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
+pander(summary(model2))
 
 
-### Hypo 3
-
-```{r}
-names(completeData)
-completeData$cope_center <- scale(completeData$cope, scale = F)
-completeData$chal_center <- scale(completeData$chal, scale = F)
-completeData$threat_center <- scale(completeData$threat, scale = F)
-completeData$t1timebuiss_center <- scale(completeData$t1timebuiss, scale = F)
-completeData$exp_cond_center <- scale(completeData$exp_cond, scale = F)
-completeData$finsit_1_scale <- scale(completeData$finsit_1, scale = F)
-
-
-
-model2 <- lm(quit ~  exp_cond + cope_center + exp_cond:cope_center + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-model2 <- lm(quit ~  exp_cond + chal_center + exp_cond:chal_center + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-model2 <- lm(quit ~  exp_cond + threat_center + exp_cond:threat_center + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-model2 <- lm(Negaff ~  exp_cond + t1timebuiss_center + exp_cond:t1timebuiss_center + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-
-model2 <- lm(threat ~  exp_cond_center + t1timebuiss_center + exp_cond_center:t1timebuiss_center + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-model2 <- lm(chal ~  exp_cond + t1timebuiss_center + exp_cond:t1timebuiss_center + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-model2 <- lm(quit ~  exp_cond_center + t1timebuiss_center + exp_cond_center:t1timebuiss_center + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-
-
-summary(model2)
-
-model2 <- lm(chal ~  exp_cond + cope_center + exp_cond:cope_center + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-summary(model2)
-
-model2 <- lm(threat ~  exp_cond + cope_center + exp_cond:cope_center + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-summary(model2)
-
+model2 <- lm(quit ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
+pander(summary(model2))
 ```
 
 
-
-### Hypo 4
-
-```{r}
-completeData$cope_center <- scale(completeData$cope, scale = F)
-model2 <- lm(satis ~  exp_cond + cope_center + exp_cond:cope_center + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-model2 <- lm(satis ~  exp_cond + chal_center + exp_cond:chal_center + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-model2 <- lm(satis ~  exp_cond + threat_center + exp_cond:threat_center + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = completeData)
-
-summary(model2)
-```
-
-
-### Hypo 5
-
-
-```{r}
-
-sum(is.na(comp_df_vig$t1timebuiss))
-
-
-library(lavaan)
-set.seed(1234)
-model <- ' # direct effect
-             satis ~ c*exp_cond + gender + edu + age + finsit_1 + finsit_2 + t1timebuiss
-           # mediator
-             Negaff ~ a*exp_cond
-             satis ~ b*Negaff
-             ab := a*b
-           # total effect
-             total := c + (a*b)
-         '
-fit <- sem(model, data = completeData) 
-summary(fit)
-
-
-library(lavaan)
-set.seed(1234)
-model <- ' # direct effect
-             quit ~ c*exp_cond + gender + edu + age + finsit_1 + finsit_2 + t1timebuiss
-           # mediator
-             chal ~ a*exp_cond
-             quit ~ b*chal
-             ab := a*b
-           # total effect
-             total := c + (a*b)
-         '
-fit <- sem(model, data = completeData) 
-summary(fit)
-
-
-library(lavaan)
-set.seed(1234)
-model <- ' # direct effect
-             satis ~ c*exp_cond + gender + edu + age + finsit_1 + finsit_2 + t1timebuiss
-           # mediator
-             chal ~ a*exp_cond
-             quit ~ b*chal
-             ab := a*b
-           # total effect
-             total := c + (a*b)
-         '
-fit <- sem(model, data = completeData) 
-summary(fit)
-
-
-library(lavaan)
-set.seed(1234)
-model <- ' # direct effect
-             quit ~ c*exp_cond + gender + edu + age + finsit_1 + finsit_2 + t1timebuiss
-           # mediator
-             threat ~ a*exp_cond
-             quit ~ b*threat
-             ab := a*b
-           # total effect
-             total := c + (a*b)
-         '
-fit <- sem(model, data = completeData) 
-summary(fit)
-
-
-library(lavaan)
-set.seed(1234)
-model <- ' # direct effect
-             satis ~ c*exp_cond + gender + edu + age + finsit_1 + finsit_2 + t1timebuiss
-           # mediator
-             threat ~ a*exp_cond
-             quit ~ b*threat
-             ab := a*b
-           # total effect
-             total := c + (a*b)
-         '
-fit <- sem(model, data = completeData) 
-summary(fit)
-
-
-## Bootstrap the moedrated indirect effect 
-
-
-```
-
-### Hypo 6
-
-```{r}
-set.seed(1234)
-Mod.Med.Lavaan <- '
-#Regressions
-chal ~ a1*exp_cond + a2*cope_center + a3*exp_cond:cope_center
-quit ~ cdash1*exp_cond + cdash2*cope_center + cdash3*exp_cond:cope_center + b1*chal +  gender + edu + age + finsit_1 + finsit_2 + t1timebuiss
-index.mod.med := a3*b1
-'
-fit <- sem(Mod.Med.Lavaan, data = completeData)
-summary(fit)
-
-Mod.Med.Lavaan <- '
-#Regressions
-chal ~ a1*exp_cond + a2*cope_center + a3*exp_cond:cope_center
-satis ~ cdash1*exp_cond + cdash2*cope_center + cdash3*exp_cond:cope_center + b1*chal +  gender + edu + age + finsit_1 + finsit_2 + t1timebuiss
-index.mod.med := a3*b1
-'
-fit <- sem(Mod.Med.Lavaan, data = completeData)
-summary(fit)
-
-
-library(lavaan)
-set.seed(1234)
-Mod.Med.Lavaan <- '
-#Regressions
-threat ~ a1*exp_cond + a2*cope_center + a3*exp_cond:cope_center
-satis ~ cdash1*exp_cond + cdash2*cope_center + cdash3*exp_cond:cope_center + b1*threat +  gender + edu + age + finsit_1 + finsit_2 + t1timebuiss
-index.mod.med := a3*b1
-'
-fit <- sem(Mod.Med.Lavaan, data = completeData)
-summary(fit)
-
-
-library(lavaan)
-set.seed(1234)
-Mod.Med.Lavaan <- '
-#Regressions
-threat ~ a1*exp_cond + a2*cope_center + a3*exp_cond:cope_center
-quit ~ cdash1*exp_cond + cdash2*t1timebuiss_center + cdash3*exp_cond:t1timebuiss_center + b1*threat +  gender + edu + age + finsit_1 + finsit_2
-index.mod.med := a3*b1
-'
-fit <- sem(Mod.Med.Lavaan, data = completeData)
-summary(fit)
-
-
-
-
-library(lavaan)
-set.seed(1234)
-Mod.Med.Lavaan <- '
-#Regressions
-Negaff ~ a1*exp_cond + a2*cope_center + a3*exp_cond:cope_center
-satis ~ cdash1*exp_cond + cdash2*cope_center + cdash3*exp_cond:cope_center + b1*Negaff +  gender + edu + age + finsit_1 + finsit_2 + t1timebuiss
-index.mod.med := a3*b1
-'
-fit <- sem(Mod.Med.Lavaan, data = completeData)
-summary(fit)
-
-
-```
-
-
-
-### Quit intention 
-
-```{r}
-library(car)
-library(dplyr)
-
-comp_df_vig$cope_scale <- scale(comp_df_vig$cope, scale = F)
-
-
-modelx <- (lm(comp_df_vig$quit ~ comp_df_vig$exp_cond ))
-model <- (lm(comp_df_vig$quit ~ comp_df_vig$exp_cond * comp_df_vig$cope_scale))
-model <- (lm(comp_df_vig$Negaff ~ comp_df_vig$exp_cond * comp_df_vig$cope_scale))
-
-summary(model)
-plot(model)
-nobs(model)
-
-library(boot)
-bs <- function(data, indices, maxit = 20) {
-  data <- data[indices,] # allows boot to select sample
-  fit <- lm(quitting1 ~ exp_cond * cope_scale, data=data)
-  return(coef(fit))
-} 
-
-results <- boot(data=comp_df_vig, statistic=bs, 
-   R=1000, maxit = 100)
-
-boot.ci(results, index=4, type=c("norm", "perc", "bca"))
-plot(results, index=2)
-plot(results, index=3)
-plot(results, index=4)
-
-
-## Plus controls
-comp_df_vig$cope_scale <- scale(comp_df_vig$cope, scale = F)
-model <- (lm(comp_df_vig$quit ~ comp_df_vig$exp_cond * comp_df_vig$cope_scale + comp_df_vig$finsit_1 + comp_df_vig$finsit_2 + comp_df_vig$age))
-summary(model)
-
-model <- (lm(comp_df_vig$satis ~ comp_df_vig$exp_cond * comp_df_vig$cope_scale))
-summary(model)
-
-
-
-names(comp_df_vig)
-
-## Experimental condition vs. control condition
-comp_df_vig_exp <- comp_df_vig[comp_df_vig$exp_cond == 2, ]
-comp_df_vig_cond <- comp_df_vig[comp_df_vig$exp_cond == 1, ]
-model <- (lm(comp_df_vig_cond$quit ~ comp_df_vig_cond$cope_scale))
-summary(model)
-
-comp_df_vig
-
-```
-
-#### Box Cox transformation
-
-```{r}
-library(MASS)
-
-## Models without and with transformation
-model1 <- lm(comp_df_vig$quit ~ comp_df_vig$exp_cond * comp_df_vig$cope_scale)
-
-
-boxcox(model1, plotit = TRUE)
-
-bc <- boxcox(comp_df_vig$quit ~ comp_df_vig$exp_cond * comp_df_vig$cope_scale)
-(lambda <- bc$x[which.max(bc$y)])
-
-
-
-comp_df_vig$quit_box <- (comp_df_vig$quit ^ lambda -1) / lambda
-
-
-# transformed quit intention
-model2 <- lm(comp_df_vig$quit_box ~ comp_df_vig$exp_cond * comp_df_vig$cope_scale)
-summary(model2)
-
-plot(model2)
-```
-
-#### Cooks distance and removing outliers
-
-```{r}
-
-cooksd <- cooks.distance(model2)
-
-# Plot the Cook's Distance using the traditional 4/n criterion
-sample_size <- nrow(comp_df_vig)
-plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")  # plot cook's distance
-abline(h = 4/sample_size, col="red")  # add cutoff line
-text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/sample_size, names(cooksd),""), col="red")  # add labels
-
-
-## removing outliers
-influential <- as.numeric(names(cooksd)[(cooksd > (4/sample_size))])
-comp_df_vig_screen <- comp_df_vig[-influential, ]
-
-```
-
-#### model with transformation and no outliers
-
-```{r}
-comp_df_vig_screen$exp_cond <- as.factor(comp_df_vig_screen$exp_cond) %>% revalue(., c("1"="control", "2"="experimental"))
-model3<- lm(quit_box ~ exp_cond * cope_scale, data = comp_df_vig_screen)
-plot(model3)
-summary(model3)
-```
-
-### Simple slopes
-
-```{r}
-library(emmeans)
-
-min.Sd_f <- -(sd(comp_df_vig_screen$cope_scale, na.rm = T))
-max.Sd_f <- (sd(comp_df_vig_screen$cope_scale, na.rm = T))
-
-
-(mylist <- list(cope_scale=c(min.Sd_f,0,max.Sd_f),exp_cond=c("control","experimental")))
-
-emcontcat  <- emmeans(model3, ~ cope_scale*exp_cond, at=mylist)
-
-contrast(emcontcat, "pairwise",by="cope_scale")
-
-
-emmip(model3, exp_cond ~cope_scale, at=mylist,CIs=TRUE, xlab = "Problem-focused coping", ylab = "Transformed quit intention", tlab = "Exp. condition")
-
-ggplot(comp_df_vig_screen, aes(x = cope_scale, y = quit_box, color = exp_cond)) +
- geom_point(size = .9,
-             alpha = .3) +
-  geom_smooth(method = "lm") +
-  theme_bw() +
-  scale_color_brewer(type = "qual", 
-                     palette = 3) +
-  labs(x = "Problem-focused coping",
-       y = "Transformed quit intention",
-       color = "Exp. condition")
-```
