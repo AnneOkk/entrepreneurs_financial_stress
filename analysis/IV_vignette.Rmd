@@ -158,7 +158,7 @@ comp_df_vig = comp_df_vig %>% dplyr::select(-dplyr::matches("locat"))
 corstar <- data.frame(corstars(comp_df_vig, removeTriangle = "none", result="none"))
 
 ## Make table 
-comp_df_vig_corselect  <- comp_df_vig %>% select(exp_cond, cope, mani, NA., quit, satis, finsit_1, finsit_2, age, gender, edu)
+comp_df_vig_corselect  <- comp_df_vig %>% select(exp_cond, cope, mani, NA., PA, quit, satis, finsit_1, finsit_2, age, gender, edu)
 
 Mean <- round(colMeans(comp_df_vig , na.rm =T),2)
 SD <- round(apply(comp_df_vig , 2, sd, na.rm =T),2)
@@ -209,6 +209,36 @@ comp_df_vig <- comp_df_vig %>% mutate(cope = cope-5)
 
 ## Hypothesis tests
 
+### Fin. strain > PA 
+
+* with control variables
+
+```{r include = TRUE}
+names(comp_df_vig_corselect)
+model2 <- lm(PA ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
+pander(summary(model2))
+```
+
+### Fin. strain > NA 
+
+* with control variables
+
+```{r include = TRUE}
+model2 <- lm(NA. ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
+pander(summary(model2))
+```
+
+### Fin. strain > NA 
+
+* with control variables
+
+```{r include = TRUE}
+model2 <- lm(NA. ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
+pander(summary(model2))
+```
+
+
+
 * First, we test the direct effect of perceived financial strain on entrepreneurs' intention to quit. 
 
 ### Fin. strain > Quit intention 
@@ -216,7 +246,7 @@ comp_df_vig <- comp_df_vig %>% mutate(cope = cope-5)
 * with control variables
 
 ```{r include = TRUE}
-model2 <- lm(quit ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
+model2 <- lm(satis ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
 pander(summary(model2))
 ```
 

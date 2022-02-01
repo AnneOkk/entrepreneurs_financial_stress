@@ -586,17 +586,46 @@ model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = 
 #### Detailed output
 
 ```{r include = T}
-model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2quitint", controls = T)
+model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2quitint", controls = T, modificationindices_show = TRUE)
+
 ```
 
 ### T1 finstrain > T1concom (m1), T1affcom (m2) > T2 entresa {.tabset .tabset-fade}
 
-#### Indirect effect
+#### Detailed output
 
 ```{r include = T}
 model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2entresat", controls = F, fullfit = TRUE) 
 
 ```
+
+### T1 finstrain > T1concom (m1), T1affcom (m2) > T2 vita {.tabset .tabset-fade}
+
+#### Detailed output
+
+```{r include = T}
+model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2vita", controls = F, fullfit = TRUE) 
+```
+
+### T1 finstrain > T1concom (m1), T1affcom (m2) > T2 jobsat {.tabset .tabset-fade}
+
+#### Detailed output
+
+```{r include = T}
+model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2jobsat", controls = F, fullfit = TRUE) 
+```
+
+
+### T1 finstrain > T1concom (m1), T1affcom (m2) > T2 jobsat {.tabset .tabset-fade}
+
+#### Detailed output
+
+```{r include = T}
+names(obs_df)
+model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2lifesat", controls = F, fullfit = TRUE) 
+```
+
+
 
 
 

@@ -255,7 +255,7 @@ stdCoef.merMod <- function(object) {
 
 # create a lavaan mediation model for the multi studies paper
 model_lavaan <- function(IV, mediator, DV, dat = obs_df, controls = F, fullfit = TRUE, T1control = F,
-                         T1controlvar = NULL, T1controlmediator = F, T1controlmediatorvar = NULL) {
+                         T1controlvar = NULL, T1controlmediator = F, T1controlmediatorvar = NULL, modificationindices_show = FALSE) {
   measurement_c <- function(...) {
     measurement_part <- function(...) {
       params <- list(...)
@@ -391,20 +391,20 @@ model_lavaan_multigroup <- function(IV, mediator, DV, dat = obs_df, controls = F
   fit <- sem(model, data = obs_df, group = "T1employees")
   if (fullfit == TRUE) {
     summary(fit, fit.measures=TRUE)
-  }
-  else {
+  } else {
     rbind(subset(parameterEstimates(fit), rhs == "a1*b1") %>% select(-lhs, -op, -label, -z),
     subset(parameterEstimates(fit), rhs == "a11*b11") %>% select(-lhs, -op, -label, -z))
   }
-
+  if (modificationindices_show == TRUE) {
+    lavaan::modindices(fit, sort = TRUE, maximum.number = 5)
+  } else {
+    NULL
+  }
 }
 
 
-
-
-
 # create a lavaan mediation model for the multi studies paper
-model_lavaan_multimed <- function(IV, mediator1, mediator2, DV, dat = obs_df, controls = F, fullfit = TRUE) {
+model_lavaan_multimed <- function(IV, mediator1, mediator2, DV, dat = obs_df, controls = F, fullfit = TRUE, modificationindices_show = FALSE) {
   measurement_c <- function(...) {
     measurement_part <- function(...) {
       params <- list(...)
@@ -456,9 +456,12 @@ model_lavaan_multimed <- function(IV, mediator1, mediator2, DV, dat = obs_df, co
   else {
     rbind(subset(parameterEstimates(fit), label == "indirect1") %>% select(-lhs, -op, -label, -z),
           subset(parameterEstimates(fit), label == "indirect2") %>% select(-lhs, -op, -label, -z))
-
   }
-
+  if (modificationindices_show == TRUE) {
+    lavaan::modindices(fit, sort = TRUE, maximum.number = 5)
+  } else {
+    NULL
+  }
 }
 
 
