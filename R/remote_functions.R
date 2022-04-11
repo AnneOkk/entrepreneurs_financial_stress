@@ -22,16 +22,17 @@ corstars <-function(x, method=c("pearson", "spearman"), removeTriangle=c("upper"
   #Compute correlation matrix
   require(Hmisc)
   x <- as.matrix(x)
-  correlation_matrix<-rcorr(x, type=method[1])
+  correlation_matrix<-rcorr(x, type=method)
+  numformat <- function(val) { sub("^(-?)0.", "\\1.", sprintf("%.2f", val)) }
   R <- correlation_matrix$r # Matrix of correlation coeficients
   p <- correlation_matrix$P # Matrix of p-value
   ## Define notions for significance levels; spacing is important.
   mystars <- ifelse(p < .001, "*** ", ifelse(p < .01, "**  ", ifelse(p < .05, "*   ", "    ")))
   ## trunctuate the correlation matrix to two decimal
-  R <- format(round(cbind(rep(-1.11, ncol(x)), R), 2))[,-1]
+  R <- numformat(R)
   ## build a new matrix that includes the correlations with their apropriate stars
   Rnew <- matrix(paste(R, mystars, sep=""), ncol=ncol(x))
-  diag(Rnew) <- paste(diag(R), " ", sep="")
+  diag(Rnew) <- " "
   rownames(Rnew) <- colnames(x)
   colnames(Rnew) <- paste(colnames(x), "", sep="")
   ## remove upper triangle of correlation matrix
@@ -349,7 +350,7 @@ model_lavaan <- function(IV, mediator, DV, dat = obs_df, controls = F, fullfit =
 
 
 # create a lavaan mediation model for the multi studies paper
-model_lavaan_multigroup <- function(IV, mediator, DV, dat = obs_df, controls = F, fullfit = TRUE) {
+model_lavaan_multigroup <- function(IV, mediator, DV, dat = obs_df, controls = F, fullfit = TRUE, modificationindices_show = FALSE) {
   measurement_c <- function(...) {
     measurement_part <- function(...) {
       params <- list(...)
@@ -465,6 +466,40 @@ model_lavaan_multimed <- function(IV, mediator1, mediator2, DV, dat = obs_df, co
 }
 
 
+medmodel <- function(step) {
+  fit_table <- tidy(step, conf.int = T)
+  output <- rbind(fit_table[fit_table$label == "c", ],
+                  fit_table[fit_table$label == "a1", ],
+                  fit_table[fit_table$label == "b1", ],
+                  fit_table[fit_table$label == "a2", ],
+                  fit_table[fit_table$label == "b2", ],
+                  fit_table[fit_table$label %like% "control", ],
+                  fit_table[fit_table$label == "a1b1", ],
+                  fit_table[fit_table$label == "a2b2", ],
+                  fit_table[fit_table$label == "total", ],
+                  fit_table[fit_table$label == "total2", ]) %>%
+    dplyr::select(dplyr::matches("term|estimate|p.value|conf.low|conf.high|std.all")) %>%
+    mutate(p.value = p.value  %>% as.numeric(.)  %>% round(., digits = 3) %>% sprintf("%.3f",.)  %>%  as.character(.) %>% gsub("0\\.", "\\.", .)) %>%
+    mutate(conf.low = formatC(conf.low, digits = 2, form = "f")) %>%
+    mutate(conf.high = formatC(conf.high, digits = 2, form = "f")) %>%
+    mutate(estimate = round(estimate, digits = 2)  %>% sprintf("%.2f",.)) %>%
+    mutate(std.all = round(std.all, digits = 2) %>% sprintf("%.2f",.)) %>%
+    mutate(CI = paste0("[",conf.low, ", ", conf.high,"]")) %>%
+    dplyr::select(-matches("conf"))
+  out_df <- output[, c(1,2,5, 3, 4)]
+  colnames(out_df) <- c("Predictor", "\\textit{B}", "95\\%CI", "\\textit{p}", "\\beta")
+  return(out_df)
+}
+
+bind_medmodel <- function(step1_model, step2_model, step3_model){
+  outdf <- rbind(c("Step 1", "", "", "", ""),
+                 step1_model,
+                 c("Step 2", "", "", "", ""),
+                 step2_model,
+                 c("Step 3", "", "", "", ""),
+                 step3_model)
+
+}
 
 
 

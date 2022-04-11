@@ -7,35 +7,95 @@ output: html_document
 
 # I Vignette
 
-## Preparation 
 
 
-```{r include = TRUE}
-# make location variable
-Vignette_finstrain$locat <- (names(attr(Vignette_finstrain$locat,"labels")[match(Vignette_finstrain$locat,attr(Vignette_finstrain$locat,"labels"))]))
-
+```{r eval = FALSE}
+## Anonymize and export raw data
+## 
 # only include those with valid ID 
-Vignette_finstrain <- Vignette_finstrain[str_length(Vignette_finstrain$ID) > 19, ]
+Vignette_df <- Vignette_finstrain[str_length(Vignette_finstrain$ID) > 19, ] %>% dplyr::select(-dplyr::matches("Status|IPAddress|Progress|Duration|Finished|ResponseId|Name|Email|Location|Channel|Language|ID|Click|Submit|bye|Always|PROLIFIC|Reference"))
 
-# assign experimental and control group 
-Vignette_finstrain <- Vignette_finstrain %>% dplyr::mutate(exp_cond = ifelse(group == "control", 1,
+# create location variable 
+Vignette_df$locat <- (names(attr(Vignette_df$locat,"labels")[match(Vignette_df$locat,attr(Vignette_df$locat,"labels"))]))
+
+library(haven)
+write_sav(Vignette_df, "../../Full_dataset/Vignette_df_full.sav")
+
+Vignette_df <-  Vignette_df %>% dplyr::select(-dplyr::matches("Start|EndDate|consent|TEXT|cope|chal_[1-3]|threat_[1-3]|PANA|product|lang|satis_[1-3]"))
+
+write_sav(Vignette_df, "../data/Vignette_df.sav")
+```
+
+
+```{r}
+## Import data and data preprocessing 
+library(haven)
+library(tidyverse)
+Vignette_df <- read_sav("../data/Vignette_df.sav")
+
+Vignette_df <- Vignette_df %>% dplyr::mutate(exp_cond = ifelse(group == "control", 1,
                                              ifelse(group == "intervention", 2, NA)))
 
 # drop non-valid data 
-Vignette_finstrain <- Vignette_finstrain %>% drop_na(mani_1)
-cat("Number of participants in the original dataset:", nrow(Vignette_finstrain), "\n")
+Vignette_df <- Vignette_df %>% drop_na(mani_1)
+cat("Number of participants in the raw dataset:", nrow(Vignette_df), "\n")
 
+# Rename quit items 
+Vignette_df  <- Vignette_df %>% dplyr::rename(
+  quit_1 = quit1_1,
+  quit_2 = quit2_1, 
+  quit_3 = quit2_2
+)
+```
+
+## Preparation
+
+```{r  include = TRUE}
+cat("Number of participants who are not entrepreneurs:", nrow(Vignette_df) - nrow(Vignette_df[!(Vignette_df$occ == 3),]), "\n")
+Vignette_df <-Vignette_df[!(Vignette_df$occ == 3),]
+
+cat("Number of entrepreneurs in the sample:", nrow(Vignette_df))
+```
+
+```{r include = TRUE}
 ## Remove non-founders
-Vignette_finstrain<-Vignette_finstrain[!(Vignette_finstrain$found==2),]
-cat("Number of participants after not involved in founding removed:", nrow(Vignette_finstrain), "\n")
+cat("Number of participants who are not involved in founding:", nrow(Vignette_df) - nrow(Vignette_df[!(Vignette_df$found==2),]), "\n")
+Vignette_df<-Vignette_df[!(Vignette_df$found==2),]
+```
+
+```{r}
+library(zoo)
+library(lubridate)
+# Make years since business foundation 
+Vignette_df$year <- as.numeric(names(attr(Vignette_df$year_1,"labels")[match(Vignette_df$year_1,attr(Vignette_df$year_1,"labels"))]))
+
+Vignette_df$month <- (names(attr(Vignette_df$month_1,"labels")[match(Vignette_df$month_1,attr(Vignette_df$month_1,"labels"))]))
+
+
+Vignette_df$t1timebuiss <- as.yearmon(paste(Vignette_df$year, Vignette_df$month), "%Y %b")
+
+Vignette_df$t1timebuiss <- as_date(Vignette_df$t1timebuiss)
+
+Vignette_df$RecordedDate <- as_date(Vignette_df$RecordedDate)
+
+
+Vignette_df$t1timebuiss <- as.numeric(difftime(Vignette_df$RecordedDate, Vignette_df$t1timebuiss, UTC,
+         units = c("days")))
+
+```
+
+
+```{r include = TRUE}
+## Assign ID variable
+Vignette_df$ID = seq.int(nrow(Vignette_df)) 
 
 ### Attention checks
-vignette_df_fails = Vignette_finstrain %>% dplyr::select(chal_4,threat_4,satis_4)
+vignette_df_fails = Vignette_df %>% dplyr::select(chal_4,threat_4,satis_4)
 
 ## create attention fails df 
-att_1 <- Vignette_finstrain[Vignette_finstrain$chal_4 %in% c(1, 2, 3, 5), ]
-att_2 <- Vignette_finstrain[Vignette_finstrain$threat_4 %in% c(1,2, 3, 5), ]
-att_3 <- Vignette_finstrain[Vignette_finstrain$satis_4 %in% c(1, 3, 4, 5, 6, 7), ]
+att_1 <- Vignette_df[Vignette_df$chal_4 %in% c(1, 2, 3, 5), ]
+att_2 <- Vignette_df[Vignette_df$threat_4 %in% c(1,2, 3, 5), ]
+att_3 <- Vignette_df[Vignette_df$satis_4 %in% c(1, 3, 4, 5, 6, 7), ]
 
 attention_fail <- rbind(att_1, att_2, att_3) %>%
   as_tibble(.)
@@ -45,69 +105,90 @@ Rows_fails <- attention_fail$ID %in% ID_vals[ID_vals$Freq > 0,1]
 Att_fails <- attention_fail[Rows_fails,]
 
 ## exclude attention fails (two or more fails)
-vignette_df <- Vignette_finstrain[!(Vignette_finstrain$ID %in% Att_fails$ID),]
+Vignette_df <- Vignette_df[!(Vignette_df$ID %in% Att_fails$ID),]
 
 cat("Number of T1 attention fails (at least one of three attention check items failed):", nrow(unique(Att_fails)) , "\n")
-cat("Number of participants after T1 attention fails removed:", nrow(vignette_df) , "\n")
+cat("Number of participants after T1 attention fails removed:", nrow(Vignette_df) , "\n")
 
-vignette_df <- vignette_df[, -which(names(vignette_df) %in% c("chal_4","threat_4", "satis_4"))]
+Vignette_df <- Vignette_df[, -which(names(Vignette_df) %in% c("chal_4","threat_4", "satis_4"))]
 
 ```
 
+
+```{r include = TRUE}
+## NA on model variables 
+## 
+# make gender = 3 NA 
+Vignette_df$gender[Vignette_df$gender ==3] = NA
+
+cat("Number of participants with missing data on model variables:", nrow(Vignette_df) - nrow(Vignette_df %>% drop_na(exp_cond, quit_1, quit_2, quit_3, age_1,
+                                     gender, finsit_1, finsit_2, coown, t1timebuiss)), "\n")
+
+Vignette_df<-Vignette_df %>% drop_na(exp_cond, quit_1, quit_2, quit_3, age_1,
+                                     gender, finsit_1, finsit_2, coown, t1timebuiss)
+
+cat("Final sample size:", nrow(Vignette_df))
+```
+
+## Participant characteristics
+
+```{r}
+set.seed(42)
+  library(qwraps2)
+# define the markup language we are working in.
+# options(qwraps2_markup = "latex") is also supported.
+options(qwraps2_markup = "markdown")
+```
+
+
+```{r include = T, echo = T}
+library(janitor)
+# Age overview
+Vignette_df$age <- as.numeric(names(attr(Vignette_df$age_1,"labels")[match(Vignette_df$age_1,attr(Vignette_df$age_1,"labels"))]))
+
+cat("Range age: ", range(Vignette_df$age,  na.rm = T))
+
+cat(paste0("Mean (SD) age: ", round(mean(Vignette_df$age, na.rm = T), 1), " (", round(sd(Vignette_df$age, na.rm = T), 1), ")"))
+
+# Coownership
+tabyl(Vignette_df$coown)
+
+# Country 
+library(dplyr)
+library(zoo)
+library(lubridate)
+tabyl(Vignette_df$locat)
+
+# Time since business foundation 
+cat("Range of days since business foundation: " , range(Vignette_df$t1timebuiss, na.rm = T))
+
+cat("Mean days since business foundation: ", mean(Vignette_df$t1timebuiss,  na.rm = T))
+
+cat("SD days since business foundation: ", sd(Vignette_df$t1timebuiss,  na.rm = T))
+
+
+sd(Vignette_df$t1timebuiss,  na.rm = T)/365
+
+```
+
+
 ```{r}
 ## Reliabilities 
-
 library(multicon)
 library("sjlabelled")
 library(lubridate)
 library(stringr)
 library(zoo)
 library(tidyverse)
-vignette_df$year <- as.numeric(names(attr(vignette_df$year_1,"labels")[match(vignette_df$year_1,attr(vignette_df$year_1,"labels"))]))
-
-vignette_df$age <- as.numeric(names(attr(vignette_df$age_1,"labels")[match(vignette_df$age_1,attr(vignette_df$age_1,"labels"))]))
-
-
-vignette_df$month <- (names(attr(vignette_df$month_1,"labels")[match(vignette_df$month_1,attr(vignette_df$month_1,"labels"))]))
-
-
-vignette_df$t1timebuiss <- as.yearmon(paste(vignette_df$year, vignette_df$month), "%Y %b")
-
-vignette_df$t1timebuiss <- as_date(vignette_df$t1timebuiss)
-
-vignette_df$RecordedDate <- as_date(vignette_df$RecordedDate)
-
-vignette_df$quitting1 <- vignette_df$quit1_1
-
-
-vignette_df$t1timebuiss <- as.numeric(difftime(vignette_df$RecordedDate, vignette_df$t1timebuiss, UTC,
-         units = c("days")))
-
 library("tidyverse")
 
-comp_dat <-  vignette_df %>% dplyr::select(dplyr::matches("cope|mani|chal|threat|quit|satis|PANA")) %>% remove_all_labels(.) %>% dplyr::select(-quitting1) 
-
-comp_dat <- comp_dat %>% dplyr::rename(quit_1 = quit1_1, 
-                                       quit_2 = quit2_1,
-                                       quit_3 = quit2_2,
-                                       PA_5 = PANA_10,
-                                       NA._1 = PANA_1,
-                                       NA._2 = PANA_2,
-                                       NA._3 = PANA_3,
-                                       NA._4 = PANA_4,
-                                       NA._5 = PANA_5,
-                                       PA_1 = PANA_6,
-                                       PA_2 = PANA_7,
-                                       PA_3 = PANA_8,
-                                       PA_4 = PANA_9) 
-
+comp_dat <-  Vignette_df %>% dplyr::select(dplyr::matches("cope|mani|chal|threat|quit|satis|PANA")) %>% remove_all_labels(.)
 
 library(tidyr)
 
 matches <- dplyr::matches
 
-
-comp_dat_single_item <- vignette_df %>% dplyr::select(dplyr::matches("finsit|exp_cond|t1timebuiss|coown|indu|age|gender|lang|edu|quitting1|locat|quitting "))  %>% remove_all_labels(.) %>% dplyr::select(-matches("UserLanguage|Q52_Page_Submit|Q53_Page_Submit|_TEXT|ifelse|age_1|LocationLatitude|LocationLongitude")) 
+comp_dat_single_item <- Vignette_df %>% dplyr::select(dplyr::matches("finsit|exp_cond|t1timebuiss|coown|indu|age|gender|lang|edu|quitting1|locat|quitting "))  %>% remove_all_labels(.) %>% dplyr::select(-matches("UserLanguage|Q52_Page_Submit|Q53_Page_Submit|_TEXT|ifelse|age_1|LocationLatitude|LocationLongitude")) 
 
   
 alph_dat <- comp_dat
@@ -138,35 +219,31 @@ DT::datatable(
                    pageLength = 15))
 ```
 
-
-```{r eval = FALSE}
-## Impute missing data 
-library(mice)
-
-imputed_Data <- mice(comp_df_vig, m=5, maxit = 50, method = 'pmm', seed = 500)
-summary(imputed_Data)
-
-completeData <- complete(imputed_Data,2)
-names(comp_df_vig)
-```
-
 ## Correlations
 
 ```{r include = TRUE}
-comp_df_vig = comp_df_vig %>% dplyr::select(-dplyr::matches("locat"))
+library(Hmisc)
+comp_df = comp_df_vig %>% dplyr::select(-dplyr::matches("indu|locat|mani|edu")) %>% dplyr::select(exp_cond, quit, age, gender, finsit_1, finsit_2, coown, t1timebuiss)
 
-corstar <- data.frame(corstars(comp_df_vig, removeTriangle = "none", result="none"))
+correlation_matrix<-rcorr(as.matrix(comp_df), type="pearson")
+min(correlation_matrix$n) 
+max(correlation_matrix$n) 
+
+comp_df$t1timebuiss <- comp_df$t1timebuiss/365
 
 ## Make table 
-comp_df_vig_corselect  <- comp_df_vig %>% select(exp_cond, cope, mani, NA., PA, quit, satis, finsit_1, finsit_2, age, gender, edu)
-
-Mean <- round(colMeans(comp_df_vig , na.rm =T),2)
-SD <- round(apply(comp_df_vig , 2, sd, na.rm =T),2)
-
+Mean <- round(colMeans(comp_df , na.rm =T),2)
+SD <- round(apply(comp_df , 2, sd, na.rm =T),2)
 mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
 
-corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df_vig, removeTriangle = "none", result="none")))  %>%
-  dplyr::mutate(across(everything(), as.character))
+corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df, removeTriangle = "upper", result="none"))) 
+
+rownames(corstar_select) <- c("1. Financial stress", "2. Quit intention", "3. Age", 
+                              "4. Gender", "5. Business fin.sit", "6. Influence Covid-19", "7. Coownership", "8. Business age")
+
+colnames(corstar_select) <- c("Mean", "SD", "1.", "2.", "3.", 
+                              "4.", "5.", "6.", "7.")
+
 
 corstar_select %>%
   DT::datatable(
@@ -176,101 +253,50 @@ corstar_select %>%
                    pageLength = 15,
                   lengthMenu = c(25, 50, 75, 94)))
 
-  
-#rownames(corstar_select) <- c("1. Financial strain", "2. Problem-focused coping", "3. Quit intention", 
-#                              "4. Life satisfaction", "5. Founding date", "6. Age",
-#                              "7. Gender", "8. Education", "9. Country of origin")
-
-#colnames(corstar_select) <- c("Mean", "SD", "1.", "2.", "3.", 
-#                              "4.", "5.", "6.",
-#                              "7.", "8.")
-
-#(xtable)
-#print(xtable(corstar_select, type = "latex"), file = "cor_comp_psycorona.tex")
-
-#comp_df$w5_SE_quit
-
-#names(comp_df_vig_corselect)
-
-## get list of participants for blocklist
-
-#paste0( vignette_df$ID, collapse=",")
-
-## Recode coping measurement
-comp_df_vig <- comp_df_vig %>% mutate(cope = cope-5)
+```
+```{r}
+library(xtable)
+print(xtable(corstar_select, type = "latex"), file = "../output/cor_comp_vignette.tex")
 ```
 
-## Potential moderators
+## Manipulation checks
 
-* Cognitive appraisal (challenge and threat)
-* Coping style (problem- and emotion-focused)
-* Coownership
-* Business age 
+```{r include = TRUE}
+exp = comp_df_vig[comp_df_vig$exp_cond == 2, ]
+cond = comp_df_vig[comp_df_vig$exp_cond == 1, ]
+
+t.test(exp$mani, cond$mani, alternative = "two.sided", var.equal = FALSE)
+
+sd(exp$mani)
+sd(cond$mani)
+```
 
 ## Hypothesis tests
-
-### Fin. strain > PA 
-
-* with control variables
-
-```{r include = TRUE}
-names(comp_df_vig_corselect)
-model2 <- lm(PA ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
-pander(summary(model2))
-```
-
-### Fin. strain > NA 
-
-* with control variables
-
-```{r include = TRUE}
-model2 <- lm(NA. ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
-pander(summary(model2))
-```
-
-### Fin. strain > NA 
-
-* with control variables
-
-```{r include = TRUE}
-model2 <- lm(NA. ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
-pander(summary(model2))
-```
-
-
-
-* First, we test the direct effect of perceived financial strain on entrepreneurs' intention to quit. 
 
 ### Fin. strain > Quit intention 
 
 * with control variables
 
 ```{r include = TRUE}
-model2 <- lm(satis ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
+model2 <- lm(quit ~  exp_cond + age + gender + finsit_1 + finsit_2 + coown + t1timebuiss , data = comp_df_vig)
 pander(summary(model2))
+
+lm.beta(model2)
 ```
-
-### Fin. strain * business age > Quit intention 
-
-* moderation by business/ entrepreneurial characteristics 
-* with control variables
+* without control variables
 
 ```{r include = TRUE}
-model2 <- lm(quit ~  exp_cond*t1timebuiss + finsit_1 + finsit_2 + age + gender + edu + coown, data = comp_df_vig)
+library("lm.beta")
+model2 <- lm(quit ~  exp_cond, data = comp_df_vig)
 pander(summary(model2))
+lm.beta(model2)
+
+t.test(exp$quit, cond$quit, alternative = "two.sided", var.equal = FALSE)
+sd(exp$quit)
+sd(cond$quit)
 ```
 
-```{r}
-model2 <- lm(NA. ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
-pander(summary(model2))
-model2 <- lm(PA ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
-pander(summary(model2))
-model2 <- lm(satis ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
-pander(summary(model2))
 
 
-model2 <- lm(quit ~  exp_cond + t1timebuiss + finsit_1 + finsit_2 + age + gender + edu, data = comp_df_vig)
-pander(summary(model2))
-```
 
 

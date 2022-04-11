@@ -9,27 +9,35 @@ output: html_document
 
 ## Preparation
 
-```{r include=TRUE}
+### Rename
+
+```{r include=F}
 library(stringr)
 library(zoo)
 library(lubridate)
 library(sjlabelled)
 
 # rename columns T1 
+observational <- observational_finstrain
+observational_T2 <- observational_finstrain_T2
 
-names(observational_finstrain) <- paste0("T1",names(observational_finstrain))
-names(observational_finstrain) <- gsub("quit1_1", "quitint_1", names(observational_finstrain))
-names(observational_finstrain) <- gsub("quit2_1", "quitint_2", names(observational_finstrain))
-names(observational_finstrain) <- gsub("quit2_2", "quitint_3", names(observational_finstrain))
-names(observational_finstrain) <- gsub("(PANA)_([6-9]|10)", "PA_\\2", names(observational_finstrain))
-names(observational_finstrain) <- gsub("(PANA_)([1-5])", "NA_\\2", names(observational_finstrain))
+names(observational) <- paste0("T1",names(observational))
+names(observational) <- gsub("quit1_1", "quitint_1", names(observational))
+names(observational) <- gsub("quit2_1", "quitint_2", names(observational))
+names(observational) <- gsub("quit2_2", "quitint_3", names(observational))
+names(observational) <- gsub("(PANA)_([6-9]|10)", "PA_\\2", names(observational))
+names(observational) <- gsub("(PANA_)([1-5])", "NA_\\2", names(observational))
 
-names(observational_finstrain_T2) <- gsub("quit_1_1", "quitint_1", names(observational_finstrain_T2))
-names(observational_finstrain_T2) <- gsub("quit_2_1", "quitint_2", names(observational_finstrain_T2))
-names(observational_finstrain_T2) <- gsub("quit_2_2", "quitint_3", names(observational_finstrain_T2))
+names(observational_T2) <- gsub("quit_1_1", "quitint_1", names(observational_T2))
+names(observational_T2) <- gsub("quit_2_1", "quitint_2", names(observational_T2))
+names(observational_T2) <- gsub("quit_2_2", "quitint_3", names(observational_T2))
 
-obs_df <- left_join(observational_finstrain, observational_finstrain_T2, by = c("T1PROLIFIC_PID" = "PROLIFIC_PID"))
+obs_df <- left_join(observational, observational_T2, by = c("T1PROLIFIC_PID" = "PROLIFIC_PID"))
+```
 
+### Recode
+
+```{r include=F}
 # recode columns
 obs_df <- obs_df %>% 
   dplyr::mutate_at(vars(dplyr::matches(c("employable_2", "affcom_1", "affcom_2"))), ~ (.*(-1)+6)) %>% 
@@ -71,19 +79,38 @@ obs_df <- obs_df %>% remove_all_labels(.) %>%
 
 # check for duplicates
 obs_df <- obs_df[!(duplicated(obs_df$T1PROLIFIC_PID)), ]
+```
+
+
+### Sample overviews
+
+```{r include=TRUE}
+# remove not entrepreneur
+obs_df<- obs_df %>% drop_na(T1occ)
+obs_df <- obs_df[!(obs_df$T1occ ==3), ]
+names(obs_df) <- gsub(x = names(obs_df), pattern = "T2_", replacement = "T2") 
 
 # basis sample (no filters)
 obs_df<- obs_df %>% drop_na(T1occ)
-cat("Number of participants in the original dataset:", nrow(obs_df), "\n")
+cat("Number of entrepreneurs at T1:", nrow(obs_df), "\n")
 
-# remove not entrepreneur
-obs_df <- obs_df[!(obs_df$T1occ ==3), ]
-cat("Number of participants after occupational status is not entrepreneur removed:", nrow(obs_df) , "\n")
+# Dropouts 
+obs_df_noT2 <- obs_df %>% drop_na(T2quitint_1, T2quitint_2, T2quitint_3)
+cat("Drop out from T1 to T2: ", nrow(obs_df) - nrow(obs_df_noT2), "\n")
+cat("Percentage Drop out from T1 to T2: ", ((nrow(obs_df) - nrow(obs_df_noT2))/ nrow(obs_df)), "\n")
+obs_df <- obs_df_noT2
 
+# basis sample after dropouts removed
+# Drop NA on model variables
+cat("Number of participants who provided data at T1 and T2:", nrow(obs_df), "\n")
 
 # delete not involved in founding
+cat("Number of participants not involved in founding removed:", nrow(obs_df[(obs_df$T1found ==2), ]), "\n")
 obs_df <- obs_df[!(obs_df$T1found ==2), ]
-cat("Number of participants after not involved in founding removed:", nrow(obs_df), "\n")
+
+# Quit between last survey and now
+cat("Number of T2 participants who quit their business between May 2021 and now (Dec 2021): ", nrow(obs_df[(obs_df$T2quit ==2), ]), "\n")
+obs_df <- obs_df[!(obs_df$T2quit ==2), ]
 
 
 # Attention checks T1
@@ -99,26 +126,18 @@ attention_fail <- function() {
 Att_fails <- attention_fail() # 8 excluded
 
 ## exclude attention fails (one or more fails)
-t1 <- obs_df %>% dplyr::select(-dplyr::matches("T2_")) %>% drop_na(T1occ) %>% .[!(.$T1ID %in% Att_fails$T1ID),] %>% dplyr::select(-T1chal_3,-T1threat_4,-T1satis_4)
+t1 <- obs_df %>% dplyr::select(-dplyr::matches("T2")) %>% drop_na(T1occ) %>% .[!(.$T1ID %in% Att_fails$T1ID),] %>% dplyr::select(-T1chal_3,-T1threat_4,-T1satis_4)
 
 cat("Number of T1 attention fails (at least one of three attention check items failed):", nrow(Att_fails) , "\n")
-cat("Number of participants after T1 attention fails removed:", nrow(t1) , "\n")
-
 # Number of T2 participants
-t2 <- obs_df[!(is.na(obs_df$T2_PID)), ] %>% select(matches("T2_"))
-
-cat("Number of T2 participants:", nrow(t2), "\n")
-
-# Quit between last survey and now
-t2 <- t2[!(t2$T2_quit == 2), ]
-cat("Number of T2 participants after excluding those who quit their business between May 2021 and now (Dec 2021): ", nrow(t2), "\n")
+t2 <- obs_df[!(is.na(obs_df$T2PID)), ] %>% select(matches("T2"))
 
 ### Attention checks T2
 ## create attention fails df 
 attention_fail <- function() {
-  attention_f <- t2[(t2$T2_lifesat_4 != 2) | (t2$T2_vita_5 != 3) | (t2$T2_entresat_4 != 6),]
+  attention_f <- t2[(t2$T2lifesat_4 != 2) | (t2$T2vita_5 != 3) | (t2$T2entresat_4 != 6),]
   ID_vals <- data.frame(table(attention_f$T2_PID))
-  Rows_fails <- attention_f$T2_PID %in% ID_vals[ID_vals$Freq > 0,1]
+  Rows_fails <- attention_f$T2PID %in% ID_vals[ID_vals$Freq > 0,1]
   Att_fails <- attention_f[Rows_fails,]
   return(Att_fails)
 }
@@ -126,20 +145,57 @@ attention_fail <- function() {
 Att_fails <- attention_fail() 
 
 ## exclude attention fails (one or more fails)
-t2<- t2 %>% .[!(.$T2_PID %in% Att_fails$T2_PID),] %>% dplyr::select(-T2_lifesat_4 ,-T2_vita_5, -T2_entresat_4)
+t2<- t2 %>% .[!(.$T2PID %in% Att_fails$T2PID),] %>% dplyr::select(-T2lifesat_4 ,-T2vita_5, -T2entresat_4)
 
 cat("Number of T2 attention fails (at least one of three attention check items failed):", nrow(Att_fails) , "\n")
-cat("Number of participants after T2 attention fails removed:", nrow(t2) , "\n")
 
 
 # join the two attention checked data frames 
-obs_df <- left_join(t1, t2, by = c("T1PROLIFIC_PID" = "T2_PID"))
+obs_df <- left_join(t1, t2, by = c("T1PROLIFIC_PID" = "T2PID"))
 
-cat("Final sample size T1: ", nrow(obs_df), "\n")
-cat("Final sample size T2: ", nrow(t2), "\n")
+# NA on model variables
+# assign NA to non-binary defined
+obs_df$T1gender[obs_df$T1gender ==3] = NA
+obs_df_nona <- obs_df %>% drop_na(T1gender, T1age_1, T1timebuiss)
+cat("No response on model variables: ", nrow(obs_df) - nrow(obs_df_nona), "\n")
+
+obs_df<- obs_df_nona 
+
+cat("Final sample size: ", nrow(obs_df), "\n")
+```
+
+### Participant characteristics
+
+```{r}
+set.seed(42)
+  library(qwraps2)
+# define the markup language we are working in.
+# options(qwraps2_markup = "latex") is also supported.
+options(qwraps2_markup = "markdown")
+```
 
 
-names(obs_df) <- gsub("T2_", "T2", names(obs_df))
+```{r include = TRUE}
+tabyl(obs_df$T1gender)
+
+# Age overview
+cat("Range age: ", range(obs_df$T1age_1,  na.rm = T))
+
+cat(paste0(" Mean (SD) age: ", round(mean(obs_df$T1age_1, na.rm = T), 1), " (", round(sd(obs_df$T1age_1, na.rm = T), 1), ")"))
+
+# Business age overview 
+obs_df$T1timebuiss <- obs_df$T1timebuiss/365
+cat(" Range business age (in years): ", range(obs_df$T1timebuiss,  na.rm = T))
+cat(paste0(" Mean (SD) business age: ", round(mean(obs_df$T1timebuiss, na.rm = T), 1), " (", round(sd(obs_df$T1timebuiss, na.rm = T), 1), ")"))
+
+# Coownership
+tabyl(obs_df$T1coown)
+
+# Country 
+library(dplyr)
+library(zoo)
+library(lubridate)
+tabyl(obs_df$T1locat)
 
 
 ```
@@ -204,26 +260,83 @@ corstar_select %>%
                   lengthMenu = c(25, 50, 75, 94)))
 ```
 
+```{r}
+names(comp_df)
+comp_df_sel <- comp_df %>% dplyr::select(T1affcom, T1concom, T1finstrain, T2quitint, T1age_1, T1gender, T1coown, T1timebuiss)
+```
+
+
+```{r}
+library(Hmisc)
+comp_df = comp_df_sel  %>% .[, c(3, 1, 2, 5, 6, 7, 8, 4)]
+
+correlation_matrix<-rcorr(as.matrix(comp_df), type="pearson")
+
+comp_df$T1timebuiss <- comp_df$T1timebuiss/365
+
+## Make table 
+Mean <- round(colMeans(comp_df , na.rm =T),2)
+SD <- round(apply(comp_df , 2, sd, na.rm =T),2)
+mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
+
+corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df, removeTriangle = "upper", result="none"))) 
+
+rownames(corstar_select) <- c("1. Financial stress", "2. Affective commitment", 
+                              "3. Continuance commitment", "4. Age", "5. Gender", "6. Coownership", "7. Business age", "8. Quit intention")
+
+colnames(corstar_select) <- c("Mean", "SD", "1.", "2.", "3.", 
+                              "4.", "5.", "6.", "7.")
+
+```
+```{r}
+library(xtable)
+print(xtable(corstar_select, type = "latex"), file = "../output/cor_comp_observational.tex")
+```
+
 
 ## Factor structure
 
-### Three factors commitment
+### 4 separate factors (theoretical model)
 
 ```{r include = T}
 library(lavaan)
 com_FA <- "
-T1concom =~ T1concom_1 + T1concom_2 + T1concom_3
-T1affcom =~ T1affcom_1 + T1affcom_2 + T1affcom_3
-T2normcom =~ T2normcom_1 + T2normcom_2 + T2normcom_3
+T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 
+T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3 
+T1affcom =~ T1affcom_1 + T1affcom_2 + T1affcom_3 
+T1concom =~ T1concom_1 + T1concom_2 + T1concom_3 
 "
+fit <- cfa(com_FA , data=obs_df)
+summary(fit, fit.measures=TRUE)
+```
 
+### 3 separate factors: quitint & finstrain combined
+
+```{r include = T}
+com_FA <- "
+T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 + T1finstrain_1 + T1finstrain_2 + T1finstrain_3 
+T1affcom =~ T1affcom_1 + T1affcom_2 + T1affcom_3 
+T1concom =~ T1concom_1 + T1concom_2 + T1concom_3 
+"
+fit <- cfa(com_FA , data=obs_df)
+summary(fit, fit.measures=TRUE)
+```
+
+### 3 separate factors: affcom & concom combined
+
+```{r include = T}
+com_FA <- "
+T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 
+T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3 
+T1affcom =~ T1affcom_1 + T1affcom_2 + T1affcom_3 + T1concom_1 + T1concom_2 + T1concom_3 
+"
 fit <- cfa(com_FA , data=obs_df)
 summary(fit, fit.measures=TRUE)
 ```
 
 ### Modification indices > 9
 
-```{r include = T}
+```{r include = F}
 modificationindices(fit) %>%
   as_data_frame() %>%
   arrange(-mi) %>%
@@ -232,398 +345,116 @@ modificationindices(fit) %>%
   pander(caption="MI values > 9 for commitment FA")
 ```
 
-### Comparison to continuance and affective combined 
-
-```{r include = T}
-com2_FA <- "
-T1concom =~ T1concom_1 + T1concom_2 + T1concom_3 + T1affcom_1 + T1affcom_2 + T1affcom_3
-T2normcom =~ T2normcom_1 + T2normcom_2 + T2normcom_3
-"
-fit2 <- cfa(com2_FA , data=obs_df)
-anova(fit, fit2)
-```
-
-### Comparison to continuance and normative combined 
-
-```{r include = T}
-com3_FA <- "
-T1concom =~ T1concom_1 + T1concom_2 + T1concom_3 + T2normcom_1 + T2normcom_2 + T2normcom_3
-T1affcom =~ T1affcom_1 + T1affcom_2 + T1affcom_3
-"
-fit3 <- cfa(com3_FA , data=obs_df)
-anova(fit, fit3)
-```
-
-
-### Comparison to affective and normative combined 
-
-```{r include = T}
-com4_FA <- "
-T1concom =~ T1concom_1 + T1concom_2 + T1concom_3
-T1affcom =~ T1affcom_1 + T1affcom_2 + T1affcom_3 + T2normcom_1 + T2normcom_2 + T2normcom_3
-"
-fit4 <- cfa(com4_FA , data=obs_df)
-anova(fit, fit4)
-```
-
 ## Hypotheses tests quit intention 
 
-### Cross-sectional
+### Step 1
 
 ```{r}
-library(lavaan)
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T1quitint", controls = F, fullfit = TRUE)
+model <- '
+T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 
+T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3 
+           # direct effect
+             T2quitint ~ c*T1finstrain +  control1*T1age_1 + control2*T1gender + control4*T1timebuiss  + control5*T1coown
+         '
+set.seed(12)
+step1 <- sem(model, data = obs_df, se = "bootstrap", bootstrap = 5000)
+
+summary(step1, fit.measures = TRUE)
+
+out_df1 = medmodel(step= step1)
+```
+### Step 2
+
+```{r}
+model <- '
+T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 
+T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3 
+T1affcom =~ T1affcom_1 + T1affcom_2 + T1affcom_3 
+
+           # direct effect
+             T2quitint ~ c*T1finstrain + control1*T1age_1 + control2*T1gender + control4*T1timebuiss  + control5*T1coown
+           # mediator
+             T1affcom ~ a1*T1finstrain
+             T2quitint ~ b1*T1affcom
+           # indirect effect (a*b)
+             a1b1 := a1*b1
+           # total effect
+             total := c + (a1*b1)
+         '
+set.seed(12)
+step2 <- sem(model, data = obs_df, se = "bootstrap", bootstrap = 5000)
+out_df2 =  medmodel(step= step2)
+
+
+summary(step2, fit.measures = TRUE)
+
+library(parameters)
+model_parameters(
+  medmodel_result,
+  ci = 0.95,
+  standardize = FALSE,
+  component = c("regression", "correlation", "loading", "defined"),
+  keep = NULL,
+  drop = NULL,
+  parameters = keep,
+  verbose = TRUE
+)
 ```
 
 
-#### T1 finstrain > T1 con. commitment > T1 quit {.tabset .tabset-fade}
 
-* without control variables
 
-##### Indirect effect
+### Step 3
 
 ```{r include = T}
-library(lavaan)
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T1quitint", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
+model2 <- '
+T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 
+T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3 
+T1affcom =~ T1affcom_1 + T1affcom_2 + T1affcom_3 
+T1concom =~ T1concom_1 + T1concom_2 + T1concom_3 
 
+
+           # direct effect
+             T2quitint ~ c*T1finstrain + control1*T1age_1 + control2*T1gender + control4*T1timebuiss  + control5*T1coown
+             #T2quitint ~ T1quitint
+           # mediator
+             T1affcom ~ a1*T1finstrain
+             T1concom ~ a2*T1finstrain
+             T2quitint ~ b1*T1affcom
+             T2quitint ~ b2*T1concom
+           # indirect effect (a*b)
+             a1b1 := a1*b1
+             a2b2 := a2*b2
+           # total effect
+             total2 := c + (a1 * b1) + (a2 * b2)
+             T1affcom ~~ T1concom
+         '
+set.seed(12)
+step3 <- sem(model2, data = obs_df, se = "bootstrap", bootstrap = 5000)
+out_df3 =  medmodel(step= step3)
+summary(step3, fit.measures = TRUE)
 ```
 
-##### Detailed output
-
-```{r include = T}
-library(lavaan)
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T1quitint", controls = F)
+```{r}
+out_df <- bind_medmodel(out_df1, out_df2, out_df3)
+print(xtable(out_df, type = "latex"), file = "../output/paras_mod3.tex", include.rownames = F ,sanitize.text.function = function(x){x})
 ```
 
 
-#### T1 finstrain > T1 con. commitment > T1 quit {.tabset .tabset-fade}
-
-* with control variables
-
-##### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T1quitint", controls = T, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-##### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T1quitint", controls = T)
-```
-
-
-#### T1 finstrain > T1 aff. commitment > T1 quit {.tabset .tabset-fade}
-
-* without control variables
-
-##### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T1quitint", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-##### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T1quitint", controls = F)
-```
-
-#### T1 finstrain > T1 aff. commitment > T1 quit {.tabset .tabset-fade}
-
-* with control variables
-
-##### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T1quitint", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-##### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T1quitint", controls = F)
-```
-
-### Lagged 
-
-#### T1 finstrain > T1 con. commitment > T2 quit {.tabset .tabset-fade}
-
-* without control variables
-
-##### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T2quitint", controls = F, fullfit = F) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-##### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T2quitint", controls = F) 
-```
-
-* with control variables
-
-##### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T2quitint", controls = T, fullfit = F) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-##### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T2quitint", controls = T) 
-```
-
-* with control variables and T1 control        
-                         
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T2quitint", controls = T, fullfit = TRUE, T1control = T, T1controlvar = "T1quitint") 
-```
-
-#### T1 finstrain > T1 aff. commitment > T2 quit {.tabset .tabset-fade}
-
-* without control variables
-
-##### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T2quitint", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-##### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T2quitint", controls = F)
-```
-
-* with control variables and T1 control        
-                         
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T2quitint", controls = T, fullfit = TRUE, T1control = T, T1controlvar = "T1quitint") 
-```
-
-### Cross-sectional 
-
-#### T2 finstrain > T2 norm. commitment > T2 quit {.tabset .tabset-fade}
-
-* without control variables
-
-##### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T2finstrain",  mediator = "T2normcom", DV = "T2quitint", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-##### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T2finstrain",  mediator = "T2normcom", DV = "T2quitint", controls = F)
-```
-
-### Lagged 
-
-#### T1 finstrain > T2 con. commitment > T2 quit {.tabset .tabset-fade}
-
-* without control variables
-
-##### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T2concom", DV = "T2quitint", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-##### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T2concom", DV = "T2quitint", controls = F)
-```
-
-* with control variables and T1 control
-
-##### Detailed output
-
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T2concom", DV = "T2quitint", controls = F, fullfit = TRUE, T1control = TRUE, T1controlmediator = TRUE, T1controlmediatorvar  = "T1concom")
+```{r}
+library("semTable")
+semTable(list("Single mediation" = medmodel_result, "Double mediation" = medmodel_result2), file = NULL, paramSets = c("slopes","constructed","fits"),
+         paramSetLabels = c("slopes" = "Direct effects", "constructed" = "Indirect and total effects","fits" = "Fit Indices"), 
+         columns = c(est = "Est", se = "SE", p = "\textit{p}"),
+         varLabels = c("T1finstrain" = "T1 Fin. stress", "T1affcom" = "T1 Affective com.", "T2quitint" = "T2 Quit intention","T1concom" = "T1 Continuance com.",  "a1b1" = "Indirect effect", "a2b2" = "Indirect effect", "T1gender" = "Gender", "T1age_1" = "Age", "T1employable" = "T1 empployability", "T1timebuiss" = "Business age",
+                       "total" = "Total effect"), groups = NULL,
+         type = "latex", table.float = FALSE, caption = NULL,
+         label = NULL, longtable = TRUE,
+         centering = "siunitx", alpha = c(0.05, 0.01, 0.001))
 ```
 
 
 
-#### T1 finstrain > T2 aff. commitment > T2 quit {.tabset .tabset-fade}
-
-* without control variables
-
-##### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T2affcom", DV = "T2quitint", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-##### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T2affcom", DV = "T2quitint", controls = F)
-```
-
-* with control variables and T1 control
-
-##### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T2affcom", DV = "T2quitint", controls = F, fullfit = TRUE, T1control = FALSE, T1controlmediator = TRUE, T1controlmediatorvar  = "T1affcom")
-```
-
-
-## Hypotheses tests DV: entrepreneurial satisfaction
-
-### T1 finstrain > T1 con. commitment > T2 entre sat {.tabset .tabset-fade}
-
-* without control variables
-
-#### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T2entresat", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-#### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T2entresat", controls = F)
-```
-
-### T1 finstrain > T1 aff. commitment > T2 entre sat {.tabset .tabset-fade}
-
-#### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T2entresat", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-#### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T2entresat", controls = F)
-```
-
-## DV: Job satisfaction
-
-### T1 finstrain > T1 con. commitment > T2 job sat {.tabset .tabset-fade}
-
-#### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T2jobsat", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-#### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1concom", DV = "T2jobsat", controls = F)
-```
-
-### T1 finstrain > T1 aff. commitment > T2 job sat {.tabset .tabset-fade}
-
-#### Indirect effect
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T2entresat", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-#### Detailed output
-
-```{r include = T}
-model_lavaan(IV = "T1finstrain",  mediator = "T1affcom", DV = "T2entresat", controls = F)
-```
-
-## Multigroup analysis normative 
-
-* employees yes = 2 or no = 1
-
-### T2 finstrain > T2 normcom > T2 quit {.tabset .tabset-fade}
-
-#### Indirect effect
-
-```{r include = T}
-model_lavaan_multigroup(IV = "T2finstrain",  mediator = "T2concom", DV = "T2quitint", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-#### Detailed output
-
-```{r include = T}
-model_lavaan_multigroup(IV = "T2finstrain",  mediator = "T2concom", DV = "T2quitint", controls = F)
-```
-
-## Multiple mediators
-
-### T1 finstrain > T1concom (m1), T1affcom (m2) > T2 quit {.tabset .tabset-fade}
-
-#### Indirect effect
-
-```{r include = T}
-model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2quitint", controls = F, fullfit = FALSE) %>% 
-  kable(., digits = 3, row.names = FALSE)
-```
-
-#### Detailed output
-
-```{r include = T}
-model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2quitint", controls = T, modificationindices_show = TRUE)
-
-```
-
-### T1 finstrain > T1concom (m1), T1affcom (m2) > T2 entresa {.tabset .tabset-fade}
-
-#### Detailed output
-
-```{r include = T}
-model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2entresat", controls = F, fullfit = TRUE) 
-
-```
-
-### T1 finstrain > T1concom (m1), T1affcom (m2) > T2 vita {.tabset .tabset-fade}
-
-#### Detailed output
-
-```{r include = T}
-model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2vita", controls = F, fullfit = TRUE) 
-```
-
-### T1 finstrain > T1concom (m1), T1affcom (m2) > T2 jobsat {.tabset .tabset-fade}
-
-#### Detailed output
-
-```{r include = T}
-model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2jobsat", controls = F, fullfit = TRUE) 
-```
-
-
-### T1 finstrain > T1concom (m1), T1affcom (m2) > T2 jobsat {.tabset .tabset-fade}
-
-#### Detailed output
-
-```{r include = T}
-names(obs_df)
-model_lavaan_multimed (IV = "T1finstrain",  mediator1 = "T1concom", mediator2 = "T1affcom", DV = "T2lifesat", controls = F, fullfit = TRUE) 
-```
 
 
 

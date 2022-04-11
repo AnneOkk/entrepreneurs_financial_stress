@@ -33,24 +33,26 @@ df_e$date_diff <- difftime(df_e$w5_StartDate, df_e$StartDate)
 df_e$SE_start_recode <- as.numeric(names(attr(df_e$w5_SE_start,"labels")[match(df_e$w5_SE_start,attr(df_e$w5_SE_start,"labels"))]))
 df_e$SE_start_recode <- 2020-df_e$SE_start_recode
 
-
 # employees yes or no
 df_e$w5_SE_employees_dich <- ifelse(df_e$w5_SE_employees_1 > 0, 1, 0)
+
 ```
 
 
 ```{r}
 library(multicon)
-names(df_e)
-
 df_e$coded_country_fac <- factor(df_e$coded_country)
 df_e$coded_country_num <- as.numeric(df_e$coded_country_fac)
+
+# remove NA on relevant variables
+# model <- lm(w5_SE_quit ~ fin_strain +  age + gender + SE_start_recode , data = comp_df)
+df_e <- df_e %>% drop_na(w5_SE_quit, age, gender, SE_start_recode)
 
 comp_dat <- df_e %>%
   dplyr::select(probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03) 
 
 comp_singleitem <- df_e %>%
-  dplyr::select(w5_SE_quit,w5_lifeSat, SE_start_recode, age, gender, edu, coded_country_num, w5_fin_strain01, w5_SE_employees_dich) 
+  dplyr::select(w7_SE_quit, w5_SE_quit,w5_lifeSat, SE_start_recode, age, gender, edu, coded_country_num, w5_fin_strain01, w5_SE_employees_dich) 
 
 alph_dat <- comp_dat
 
@@ -68,6 +70,70 @@ alph <- purrr::map(alph_split, ~ psych::alpha(.x), data = .x) %>%
 comp_df <- as.data.frame(do.call("cbind", comp))
 alph_df <- do.call("rbind", alph) %>% round(., 2)
 
+
+df_e$w7_employstatus_11[is.na(df_e$w7_employstatus_11)] <- 0
+df_e$w7_employstatus_12[is.na(df_e$w7_employstatus_12)] <- 0
+
+df_e <- cbind(df_e, comp_df)
+
+comp_df <- cbind(comp_df, comp_singleitem) %>% remove_all_labels(.)
+```
+
+## Participant characteristics 
+
+```{r}
+set.seed(42)
+  library(qwraps2)
+# define the markup language we are working in.
+# options(qwraps2_markup = "latex") is also supported.
+options(qwraps2_markup = "markdown")
+```
+
+
+```{r include = T, echo = T}
+tabyl(df_e$gender)
+# Age overview
+df_e$age_labeled <- names(attr(df_e$age,"labels")[match(df_e$age,attr(df_e$age,"labels"))])
+
+tabyl(df_e$age_labeled)
+tabyl(df_e$age)
+
+# Business age 
+mean(df_e$SE_start_recode)
+sd(df_e$SE_start_recode)
+
+# Country 
+library(dplyr)
+tabyl(df_e$coded_country) %>% arrange(desc(n))
+
+# ge continent
+library(countrycode)
+df_e <- as.data.frame(df_e)
+df_e$region <- countrycode(sourcevar = df_e[, "coded_country"],
+                            origin = "country.name",
+                            destination = "region23")
+
+df_e$region[df_e$region == "Australia and New Zealand"] = "Northern America, Australia & New Zealand"
+df_e$region[df_e$region == "Northern America"] = "Northern America, Australia & New Zealand"
+
+df_e$region[df_e$region == "South America"] = "South & Central America"
+df_e$region[df_e$region == "Central America"] = "South & Central America"
+
+df_e$region[df_e$region == "Southern Africa"] = "Africa"
+df_e$region[df_e$region == "Northern Africa"] = "Africa"
+
+df_e$region[df_e$region == "Western Europe"] = "Europe"
+df_e$region[df_e$region == "Northern Europe"] = "Europe"
+df_e$region[df_e$region == "Eastern Europe"] = "Europe"
+df_e$region[df_e$region == "Southern Europe"] = "Europe"
+
+df_e$region[df_e$region == "Eastern Asia"] = "Eastern & South-Eastern Asia"
+df_e$region[df_e$region == "South-Eastern Asia"] = "Eastern & South-Eastern Asia"
+
+df_e$region[df_e$region == "Western Asia"] = "Central and West Asia"
+df_e$region[df_e$region == "Central Asia"] = "Central and West Asia"
+
+tabyl(df_e$region) %>% arrange(desc(n))
 ```
 
 ## Reliabilities
@@ -86,26 +152,34 @@ DT::datatable(
 ## Correlations
 
 ```{r include = TRUE}
-df_e$w7_employstatus_11[is.na(df_e$w7_employstatus_11)] <- 0
-df_e$w7_employstatus_12[is.na(df_e$w7_employstatus_12)] <- 0
-
-df_e <- cbind(df_e, comp_df)
-
-comp_df <- cbind(comp_df, comp_singleitem) %>% remove_all_labels(.)
-
 #comp_df$date_diff <- as.numeric(comp_df$date_diff)
 
-cor <- round(cor(comp_df, use="pairwise.complete.obs"), 2)
+# remove age, and irrelevant columns  
+comp_df_sel <- comp_df %>% dplyr::select(-dplyr::matches("probSolving|w5_lifeSat|coded_country_num|w5_fin_strain01|w7_SE_quit|w5_SE_employees_dich"))  %>% .[, c(1, 2, 4, 5, 3)]
 
-Mean <- round(colMeans(comp_df, na.rm =T),2)
-SD <- round(apply(comp_df, 2, sd, na.rm =T),2)
+cor <- round(cor(comp_df_sel, use="pairwise.complete.obs"), 2)
+
+Mean <- round(colMeans(comp_df_sel, na.rm =T),2)
+SD <- round(apply(comp_df_sel, 2, sd, na.rm =T),2)
 
 mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
 
 library(dplyr)
+library(Hmisc)
+correlation_matrix<-rcorr(as.matrix(comp_df_sel), type="pearson")
 
-corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df, removeTriangle = "none", result="none")))  %>%
-  dplyr::mutate(across(everything(), as.character))
+## Make table 
+Mean <- round(colMeans(comp_df_sel , na.rm =T),2)
+SD <- round(apply(comp_df_sel , 2, sd, na.rm =T),2)
+mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
+
+corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df_sel, removeTriangle = "upper", result="none"))) 
+
+rownames(corstar_select) <- c("1. Fin. stress", "2. Quit intention", "3. Age", 
+                              "4. Gender", "5. Business age")
+
+colnames(corstar_select) <- c("Mean", "SD", "1.", "2.", "3.", 
+                              "4.")
 
 
 corstar_select %>%
@@ -113,112 +187,48 @@ corstar_select %>%
     extensions = 'Buttons', 
     options = list(dom = 'Bfrtip', 
                    buttons = c('excel', "csv"),
-                   pageLength = 35,
+                   pageLength = 15,
                   lengthMenu = c(25, 50, 75, 94)))
+
 ```
 
-
-```{r eval = FALSE}
-## Make table 
-rownames(corstar_select) <- c("1. Financial strain", "2. Problem-focused coping", "3. Quit intention", 
-                              "4. Life satisfaction", "5. Founding date", "6. Age",
-                              "7. Gender", "8. Education", "9. Country of origin")
-
-colnames(corstar_select) <- c("Mean", "SD", "1.", "2.", "3.", 
-                              "4.", "5.", "6.",
-                              "7.", "8.")
-
+```{r}
 library(xtable)
-print(xtable(corstar_select, type = "latex"), file = "cor_comp_psycorona.tex")
-
-## Sample characteristics
-tabyl(comp_df$gender, sort = F)
-names(comp_df)
-
-tabyl(comp_df$age, sort = F)
-
-tabyl(comp_df$coded_country_num, sort = F)
+print(xtable(corstar_select, type = "latex"), file = "../output/cor_comp_psycorona.tex")
 ```
 
-
-```{r eval = FALSE}
-## Impute missing data 
-names(df_e)
-df_e_impute <- df_e %>% remove_all_labels(.) %>% select(matches("w5_SE_quit|w5_SE_employees_1|w5_lifeSat|w7_lifeSat|age|gender|edu|SE_start_recode|coded_country_num|T1probsolv_center|T1finstrain_center"))
-library(mice)
-
-imputed_Data <- mice(df_e_impute, m=5, maxit = 50, method = 'pmm', seed = 500)
-summary(imputed_Data)
-
-df_e_impute <- complete(imputed_Data,2)
-
-```
 
 ## Hypotheses tests
 
-## Potential moderators
-
-* Employer status
-* Business age 
-
-### Cross-sectional
-
-#### T2 finstrain > T2 quit 
-
-* with control variables 
-
-```{r include = TRUE}
-model <- lm(w5_SE_quit ~ w5_fin_strain01 + w5_SE_employees_dich + SE_start_recode+  age + gender + edu + coded_country_num, data = df_e)
-pander(summary(model))
-```
-
-#### T2 finstrain * employer status > T2 quit 
-
-* with control variables 
-
-```{r include = TRUE}
-model <- lm(w5_SE_quit ~ w5_fin_strain01*w5_SE_employees_dich + SE_start_recode+  age + gender + edu + coded_country_num, data = df_e)
-pander(summary(model))
-```
-
-#### T2 finstrain * business age > T2 quit 
-
-* with control variables 
-
-```{r include = TRUE}
-model <- lm(w5_SE_quit ~ w5_fin_strain01*SE_start_recode + w5_SE_employees_dich +  age + gender + edu + coded_country_num, data = df_e)
-pander(summary(model))
-```
-
 ### Lagged
 
-#### T1 finstrain > T2 quit 
+#### T1 fin. stress > T2 quit 
 
-* with control variables 
-
-```{r include = TRUE}
-model <- lm(w5_SE_quit ~ fin_strain + SE_start_recode + w5_SE_employees_dich +  age + gender + edu + coded_country_num, data = comp_df)
-pander(summary(model))
-
-names(comp_df)
-```
-
-#### T1 finstrain * employer status > T2 quit 
-
-* with control variables 
 
 ```{r include = TRUE}
-model <- lm(w5_SE_quit ~ fin_strain*w5_SE_employees_dich + SE_start_recode + age + gender + edu + coded_country_num, data = comp_df)
-pander(summary(model))
+library(lavaan)
+model <- '
+T2quitint =~ w5_SE_quit 
+w5_SE_quit~~0*w5_SE_quit
+T1finstrain =~ fin_strain01 + fin_strain02 + fin_strain03 
+T2quitint ~ T1finstrain + age + gender + SE_start_recode
+         '
+medmodel_result <- sem(model, data = df_e)
+
+summary(medmodel_result, fit.measures=TRUE)
 ```
 
-#### T1 finstrain * business age > T2 quit 
-
-* with control variables 
-
-```{r include = TRUE}
-model <- lm(w5_SE_quit ~ fin_strain*SE_start_recode + w5_SE_employees_dich +  age + gender + edu + coded_country_num, data = comp_df)
-pander(summary(model))
+```{r}
+library("semTable")
+semTable( medmodel_result, file = NULL, paramSets = c("slopes","constructed","fits"),
+         paramSetLabels = c("slopes" = "Direct effects", "constructed" = "Indirect and total effects","fits" = "Fit Indices"), 
+         columns = c(est = "Est", se = "SE", p = "\textit{p}"),
+         varLabels = c("T1finstrain" = "T1 Fin. stress", "T1affcom" = "T1 Affective com.", "T2quitint" = "T2 Quit intention","T1concom" = "T1 Continuance com.",  "a1b1" = "Indirect effect", "a2b2" = "Indirect effect",
+                       "total" = "Total effect", "age" = "Age", "gender" = "Gender", "SE_start_recode" = "Business age"), groups = NULL,
+         type = "latex", table.float = FALSE, caption = NULL,  fits = c("chisq","rmsea","cfi","tli","srmr"),
+         label = NULL, longtable = TRUE,
+         centering = "siunitx", alpha = c(0.05, 0.01, 0.001))
 ```
+
 
 
