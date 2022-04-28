@@ -215,7 +215,7 @@ T2quitint ~ T1finstrain + age + gender + SE_start_recode
          '
 medmodel_result <- sem(model, data = df_e)
 
-summary(medmodel_result, fit.measures=TRUE)
+summary(medmodel_result, fit.measures=TRUE, standardized = TRUE)
 ```
 
 ```{r}

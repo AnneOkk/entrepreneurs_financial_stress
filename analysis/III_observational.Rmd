@@ -130,7 +130,7 @@ t1 <- obs_df %>% dplyr::select(-dplyr::matches("T2")) %>% drop_na(T1occ) %>% .[!
 
 cat("Number of T1 attention fails (at least one of three attention check items failed):", nrow(Att_fails) , "\n")
 # Number of T2 participants
-t2 <- obs_df[!(is.na(obs_df$T2PID)), ] %>% select(matches("T2"))
+t2 <- obs_df[!(is.na(obs_df$T2PID)), ] %>% dplyr::select(dplyr::matches("T2"))
 
 ### Attention checks T2
 ## create attention fails df 
@@ -390,7 +390,46 @@ summary(step2, fit.measures = TRUE)
 
 library(parameters)
 model_parameters(
-  medmodel_result,
+  step2,
+  ci = 0.95,
+  standardize = FALSE,
+  component = c("regression", "correlation", "loading", "defined"),
+  keep = NULL,
+  drop = NULL,
+  parameters = keep,
+  verbose = TRUE
+)
+```
+
+
+### Step 2-2
+
+```{r}
+model <- '
+T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 
+T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3 
+Tconcom =~ T1concom_1 + T1concom_2 + T1concom_3 
+
+           # direct effect
+             T2quitint ~ c*T1finstrain + control1*T1age_1 + control2*T1gender + control4*T1timebuiss  + control5*T1coown
+           # mediator
+             Tconcom ~ a1*T1finstrain
+             T2quitint ~ b1*Tconcom
+           # indirect effect (a*b)
+             a1b1 := a1*b1
+           # total effect
+             total := c + (a1*b1)
+         '
+set.seed(12)
+step2_2 <- sem(model, data = obs_df, se = "bootstrap", bootstrap = 5000)
+out_df2_2 =  medmodel(step= step2_2)
+
+
+summary(step2_2, fit.measures = TRUE)
+
+library(parameters)
+model_parameters(
+  step2_2,
   ci = 0.95,
   standardize = FALSE,
   component = c("regression", "correlation", "loading", "defined"),
@@ -433,10 +472,25 @@ set.seed(12)
 step3 <- sem(model2, data = obs_df, se = "bootstrap", bootstrap = 5000)
 out_df3 =  medmodel(step= step3)
 summary(step3, fit.measures = TRUE)
+
+model_parameters(
+  step3,
+  digits =  "scientific4",
+  ci_digits =  "scientific4",
+  ci = 0.95,
+  standardize = FALSE,
+  component = c("regression", "correlation", "loading", "defined"),
+  keep = NULL,
+  drop = NULL,
+  parameters = keep,
+  verbose = TRUE
+)
+
+parameterEstimates(step3)
 ```
 
 ```{r}
-out_df <- bind_medmodel(out_df1, out_df2, out_df3)
+out_df <- rbind(out_df1, out_df2, out_df2_2, out_df3)
 print(xtable(out_df, type = "latex"), file = "../output/paras_mod3.tex", include.rownames = F ,sanitize.text.function = function(x){x})
 ```
 

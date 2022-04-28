@@ -483,7 +483,7 @@ medmodel <- function(step) {
     mutate(conf.low = formatC(conf.low, digits = 2, form = "f")) %>%
     mutate(conf.high = formatC(conf.high, digits = 2, form = "f")) %>%
     mutate(estimate = round(estimate, digits = 2)  %>% sprintf("%.2f",.)) %>%
-    mutate(std.all = round(std.all, digits = 2) %>% sprintf("%.2f",.)) %>%
+    mutate(std.all = round(std.all, digits = 2) %>% sprintf("%.2f",.) %>%  as.character(.) %>% gsub("0\\.", "\\.", .)) %>%
     mutate(CI = paste0("[",conf.low, ", ", conf.high,"]")) %>%
     dplyr::select(-matches("conf"))
   out_df <- output[, c(1,2,5, 3, 4)]
@@ -491,15 +491,7 @@ medmodel <- function(step) {
   return(out_df)
 }
 
-bind_medmodel <- function(step1_model, step2_model, step3_model){
-  outdf <- rbind(c("Step 1", "", "", "", ""),
-                 step1_model,
-                 c("Step 2", "", "", "", ""),
-                 step2_model,
-                 c("Step 3", "", "", "", ""),
-                 step3_model)
 
-}
 
 
 
