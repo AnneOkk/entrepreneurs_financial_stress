@@ -29,3 +29,7 @@ output/
 
 # RStudio
 .Rproj.user
+
+
+# Student study - not relevant for multipaper
+*students*
