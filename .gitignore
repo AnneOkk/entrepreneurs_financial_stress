@@ -33,3 +33,12 @@ output/
 
 # Student study - not relevant for multipaper
 *students*
+
+# psycorona extended
+psycorona_extended*
+
+# DS Store
+*DS_Store
+
+# refs
+refs
