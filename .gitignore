@@ -8,13 +8,7 @@
 # RStudio files
 .Rproj.user/
 
-# Rendered reports and tex tables
-analysis/*.html
-analysis/*.docx
-analysis/*.pdf
-docs/*.html
-docs/*.docx
-docs/*.pdf
+# tex tables
 *.tex
 
 # knitr and R markdown default cache directories
