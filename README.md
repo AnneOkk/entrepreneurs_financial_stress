@@ -9,6 +9,7 @@ Started on 2021-12-28.
 * **R** - Resuable R code (remote functions) used in analyses 
 * **analysis** - R Markdown analysis files (for the three studies)
 * **docs** - Rendered analysis report
+* **Codebooks** - Codebooks for the three studies
 * **raw_data** - Anonymized raw data files
 * **preprocessed_data** - Anonymized preprocessed data files (after cleaning)
 
