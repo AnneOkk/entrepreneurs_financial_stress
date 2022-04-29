@@ -4264,8 +4264,8 @@ div.tocify {
 </div>
 <div id="i-vignette" class="section level1">
 <h1>I Vignette</h1>
-<div id="preparation" class="section level2">
-<h2>Preparation</h2>
+<div id="preprocessing-start" class="section level2">
+<h2>PREPROCESSING START</h2>
 <pre><code>## Number of participants who are not entrepreneurs: 14</code></pre>
 <pre><code>## Number of entrepreneurs in the sample: 385</code></pre>
 <pre><code>## Number of participants who are not involved in founding: 21</code></pre>
@@ -4273,6 +4273,9 @@ div.tocify {
 <pre><code>## Number of participants after T1 attention fails removed: 355</code></pre>
 <pre><code>## Number of participants with missing data on model variables: 8</code></pre>
 <pre><code>## Final sample size: 347</code></pre>
+</div>
+<div id="preprocessing-end" class="section level2">
+<h2>PREPROCESSING END</h2>
 </div>
 <div id="participant-characteristics" class="section level2">
 <h2>Participant characteristics</h2>
@@ -4547,9 +4550,12 @@ cat(&quot;Range of days since business foundation: &quot; , range(I_vignette_df_
 </div>
 <div id="ii-psycorona" class="section level1">
 <h1>II PsyCorona</h1>
-<div id="preparation-1" class="section level2">
-<h2>Preparation</h2>
 <pre><code>## Number of participants in the dataset: 235</code></pre>
+<div id="preprocessing-start-1" class="section level2">
+<h2>PREPROCESSING START</h2>
+</div>
+<div id="preprocessing-end-1" class="section level2">
+<h2>PREPROCESSING END</h2>
 </div>
 <div id="participant-characteristics-1" class="section level2">
 <h2>Participant characteristics</h2>
@@ -4753,11 +4759,8 @@ tabyl(II_psycorona_df_preproc$region) %&gt;% arrange(desc(n))</code></pre>
 </div>
 <div id="iii-observational" class="section level1">
 <h1>III Observational</h1>
-<div id="preparation-2" class="section level2">
-<h2>Preparation</h2>
-<div id="rename" class="section level3">
-<h3>Rename</h3>
-</div>
+<div id="preprocessing-start-2" class="section level2">
+<h2>PREPROCESSING START</h2>
 <div id="recode" class="section level3">
 <h3>Recode</h3>
 </div>
@@ -4774,22 +4777,25 @@ tabyl(II_psycorona_df_preproc$region) %&gt;% arrange(desc(n))</code></pre>
 <pre><code>## No response on model variables:  8</code></pre>
 <pre><code>## Final sample size:  261</code></pre>
 </div>
-<div id="participant-characteristics-2" class="section level3">
-<h3>Participant characteristics</h3>
-<pre><code>##  obs_df$T1gender   n   percent
-##                1 101 0.3869732
-##                2 160 0.6130268</code></pre>
+</div>
+<div id="preprocessing-end-2" class="section level2">
+<h2>PREPROCESSING END</h2>
+</div>
+<div id="participant-characteristics-2" class="section level2">
+<h2>Participant characteristics</h2>
+<pre><code>##  III_observational_df_preproc$T1gender   n   percent
+##                                      1 101 0.3869732
+##                                      2 160 0.6130268</code></pre>
 <pre><code>## Range age:  20 68</code></pre>
 <pre><code>##  Mean (SD) age: 39.9 (11)</code></pre>
 <pre><code>##  Range business age (in years):  0.08493151 36.10959</code></pre>
 <pre><code>##  Mean (SD) business age: 6.6 (6.1)</code></pre>
-<pre><code>##  obs_df$T1coown   n   percent
-##               1 221 0.8467433
-##               2  40 0.1532567</code></pre>
-<pre><code>##  obs_df$T1locat   n     percent
-##             185 260 0.996168582
-##             187   1 0.003831418</code></pre>
-</div>
+<pre><code>##  III_observational_df_preproc$T1coown   n   percent
+##                                     1 221 0.8467433
+##                                     2  40 0.1532567</code></pre>
+<pre><code>##  III_observational_df_preproc$T1locat   n     percent
+##                                   185 260 0.996168582
+##                                   187   1 0.003831418</code></pre>
 </div>
 <div id="reliabilities-2" class="section level2">
 <h2>Reliabilities</h2>

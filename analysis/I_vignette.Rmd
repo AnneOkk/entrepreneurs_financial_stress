@@ -8,7 +8,6 @@ output: html_document
 # I Vignette
 
 
-
 ```{r eval = FALSE}
 ## Anonymize and export raw data
 ## 
@@ -56,6 +55,9 @@ Vignette_df  <- Vignette_df %>% dplyr::rename(
 I_vignette_df_raw <- Vignette_df %>% select(matches("occ|RecordedDate|mani|quit|year|month|found|coown|indu|locat|age|gender|edu|exp_cond"))
 write.csv(I_vignette_df_raw,"../raw_data/I_vignette_df_raw.csv", row.names = FALSE)
 ```
+
+## PREPROCESSING START 
+
 
 ```{r}
 library(labelled)
@@ -164,8 +166,6 @@ I_vignette_df_raw <- Vignette_df %>% select(matches("finsit|occ|RecordedDate|man
 ```
 
 
-## Preparation
-
 ```{r  include = TRUE}
 cat("Number of participants who are not entrepreneurs:", nrow(I_vignette_df_raw) - nrow(I_vignette_df_raw[!(I_vignette_df_raw$occ == 3),]), "\n")
 I_vignette_df_raw <-I_vignette_df_raw[!(I_vignette_df_raw$occ == 3),]
@@ -245,6 +245,8 @@ I_vignette_df_raw<-I_vignette_df_raw %>% drop_na(exp_cond, quit_1, quit_2, quit_
 
 cat("Final sample size:", nrow(I_vignette_df_raw))
 ```
+
+## PREPROCESSING END 
 
 ## Participant characteristics
 

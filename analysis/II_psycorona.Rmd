@@ -7,7 +7,6 @@ output: html_document
 
 # II PsyCorona
 
-## Preparation 
 
 ```{r include = TRUE}
 # Rename
@@ -50,6 +49,8 @@ II_psycorona_df_raw <- df_e %>%
 write.csv(II_psycorona_df_raw,"../raw_data/II_psycorona_df_raw.csv", row.names = FALSE)
 
 ```
+
+## PREPROCESSING START 
 
 ```{r}
 library(labelled)
@@ -157,6 +158,9 @@ II_psycorona_df_preproc <- cbind(II_psycorona_df_preproc, comp_df)
 
 comp_df <- cbind(comp_df, comp_singleitem) %>% remove_all_labels(.)
 ```
+
+## PREPROCESSING END 
+
 
 ## Participant characteristics 
 
