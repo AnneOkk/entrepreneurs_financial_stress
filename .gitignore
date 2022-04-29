@@ -41,4 +41,7 @@ psycorona_extended*
 *DS_Store
 
 # refs
-refs
+refs/
+
+# data
+data/

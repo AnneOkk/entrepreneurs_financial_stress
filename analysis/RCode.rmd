@@ -60,16 +60,17 @@ library(magrittr)
 ```
 
 ```{r, include=FALSE}
-I_students_india <- FALSE
+students_india <- FALSE
+I_vignette <- FALSE
 II_psycorona <- TRUE
 III_observational <- TRUE
-IV_vignette <- TRUE
+
 ```
 
-```{r, child=if (I_students_india) 'I_students_india.Rmd'}
+```{r, child=if (students_india) 'students_india.Rmd'}
 ```
 
-```{r, child=if (IV_vignette) 'IV_vignette.Rmd'}
+```{r, child=if (I_vignette) 'I_vignette.Rmd'}
 ```
 
 ```{r, child=if (II_psycorona) 'II_psycorona.Rmd'}
@@ -78,9 +79,6 @@ IV_vignette <- TRUE
 ```{r, child=if (III_observational) 'III_observational.Rmd'}
 ```
 
-# References
-
-<div id="refs"></div>
 
 
 
