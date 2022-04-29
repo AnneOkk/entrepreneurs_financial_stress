@@ -8,7 +8,7 @@ ipak <- function(pkg){
 
 
 # Reading in .sav data
-read_in <- function(df = files, directory) {
+read_in <- function(df = files, directory, df_list) {
   for (fname in df) {
     df_list[[fname]] <- haven::read_sav(paste0(directory ,fname), encoding = NULL, user_na = FALSE, col_select = NULL,skip = 0, n_max = Inf, .name_repair = "unique")
   }

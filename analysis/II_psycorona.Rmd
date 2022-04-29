@@ -38,20 +38,30 @@ df_e$w5_SE_employees_dich <- ifelse(df_e$w5_SE_employees_1 > 0, 1, 0)
 
 ```
 
-
 ```{r}
-library(multicon)
+# raw data 
+# 
 df_e$coded_country_fac <- factor(df_e$coded_country)
 df_e$coded_country_num <- as.numeric(df_e$coded_country_fac)
 
+II_psycorona_df_raw <- df_e %>%
+  dplyr::select( probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03, w7_SE_quit, w5_SE_quit,w5_lifeSat, SE_start_recode, age, gender, edu, coded_country_num, w5_fin_strain01, w5_SE_employees_dich, coded_country) 
+
+write.csv(II_psycorona_df_raw,"../raw_data/II_psycorona_df_raw.csv", row.names = FALSE)
+```
+
+
+```{r}
+library(multicon)
+
 # remove NA on relevant variables
 # model <- lm(w5_SE_quit ~ fin_strain +  age + gender + SE_start_recode , data = comp_df)
-df_e <- df_e %>% drop_na(w5_SE_quit, age, gender, SE_start_recode)
+II_psycorona_df_preproc <- II_psycorona_df_raw %>% drop_na(w5_SE_quit, age, gender, SE_start_recode)
 
-comp_dat <- df_e %>%
+comp_dat <- II_psycorona_df_preproc %>%
   dplyr::select(probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03) 
 
-comp_singleitem <- df_e %>%
+comp_singleitem <- II_psycorona_df_preproc %>%
   dplyr::select(w7_SE_quit, w5_SE_quit,w5_lifeSat, SE_start_recode, age, gender, edu, coded_country_num, w5_fin_strain01, w5_SE_employees_dich) 
 
 alph_dat <- comp_dat
@@ -71,10 +81,7 @@ comp_df <- as.data.frame(do.call("cbind", comp))
 alph_df <- do.call("rbind", alph) %>% round(., 2)
 
 
-df_e$w7_employstatus_11[is.na(df_e$w7_employstatus_11)] <- 0
-df_e$w7_employstatus_12[is.na(df_e$w7_employstatus_12)] <- 0
-
-df_e <- cbind(df_e, comp_df)
+II_psycorona_df_preproc <- cbind(II_psycorona_df_preproc, comp_df)
 
 comp_df <- cbind(comp_df, comp_singleitem) %>% remove_all_labels(.)
 ```
@@ -91,49 +98,49 @@ options(qwraps2_markup = "markdown")
 
 
 ```{r include = T, echo = T}
-tabyl(df_e$gender)
+tabyl(comp_df$gender)
 # Age overview
-df_e$age_labeled <- names(attr(df_e$age,"labels")[match(df_e$age,attr(df_e$age,"labels"))])
+II_psycorona_df_preproc$age_labeled <- names(attr(II_psycorona_df_preproc$age,"labels")[match(II_psycorona_df_preproc$age,attr(II_psycorona_df_preproc$age,"labels"))])
 
-tabyl(df_e$age_labeled)
-tabyl(df_e$age)
+tabyl(II_psycorona_df_preproc$age_labeled)
+tabyl(II_psycorona_df_preproc$age)
 
 # Business age 
-mean(df_e$SE_start_recode)
-sd(df_e$SE_start_recode)
+mean(II_psycorona_df_preproc$SE_start_recode)
+sd(II_psycorona_df_preproc$SE_start_recode)
 
 # Country 
 library(dplyr)
-tabyl(df_e$coded_country) %>% arrange(desc(n))
+tabyl(II_psycorona_df_preproc$coded_country) %>% arrange(desc(n))
 
 # ge continent
 library(countrycode)
-df_e <- as.data.frame(df_e)
-df_e$region <- countrycode(sourcevar = df_e[, "coded_country"],
+II_psycorona_df_preproc <- as.data.frame(II_psycorona_df_preproc)
+II_psycorona_df_preproc$region <- countrycode(sourcevar = II_psycorona_df_preproc[, "coded_country"],
                             origin = "country.name",
                             destination = "region23")
 
-df_e$region[df_e$region == "Australia and New Zealand"] = "Northern America, Australia & New Zealand"
-df_e$region[df_e$region == "Northern America"] = "Northern America, Australia & New Zealand"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Australia and New Zealand"] = "Northern America, Australia & New Zealand"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Northern America"] = "Northern America, Australia & New Zealand"
 
-df_e$region[df_e$region == "South America"] = "South & Central America"
-df_e$region[df_e$region == "Central America"] = "South & Central America"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "South America"] = "South & Central America"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Central America"] = "South & Central America"
 
-df_e$region[df_e$region == "Southern Africa"] = "Africa"
-df_e$region[df_e$region == "Northern Africa"] = "Africa"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Southern Africa"] = "Africa"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Northern Africa"] = "Africa"
 
-df_e$region[df_e$region == "Western Europe"] = "Europe"
-df_e$region[df_e$region == "Northern Europe"] = "Europe"
-df_e$region[df_e$region == "Eastern Europe"] = "Europe"
-df_e$region[df_e$region == "Southern Europe"] = "Europe"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Western Europe"] = "Europe"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Northern Europe"] = "Europe"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Eastern Europe"] = "Europe"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Southern Europe"] = "Europe"
 
-df_e$region[df_e$region == "Eastern Asia"] = "Eastern & South-Eastern Asia"
-df_e$region[df_e$region == "South-Eastern Asia"] = "Eastern & South-Eastern Asia"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Eastern Asia"] = "Eastern & South-Eastern Asia"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "South-Eastern Asia"] = "Eastern & South-Eastern Asia"
 
-df_e$region[df_e$region == "Western Asia"] = "Central and West Asia"
-df_e$region[df_e$region == "Central Asia"] = "Central and West Asia"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Western Asia"] = "Central and West Asia"
+II_psycorona_df_preproc$region[II_psycorona_df_preproc$region == "Central Asia"] = "Central and West Asia"
 
-tabyl(df_e$region) %>% arrange(desc(n))
+tabyl(II_psycorona_df_preproc$region) %>% arrange(desc(n))
 ```
 
 ## Reliabilities
@@ -193,6 +200,12 @@ corstar_select %>%
 ```
 
 ```{r}
+## preprocessed dataset 
+write.csv(II_psycorona_df_preproc,"../preprocessed_data/II_psycorona_df_preproc.csv", row.names = FALSE)
+```
+
+
+```{r}
 library(xtable)
 print(xtable(corstar_select, type = "latex"), file = "../output/cor_comp_psycorona.tex")
 ```
@@ -213,7 +226,7 @@ w5_SE_quit~~0*w5_SE_quit
 T1finstrain =~ fin_strain01 + fin_strain02 + fin_strain03 
 T2quitint ~ T1finstrain + age + gender + SE_start_recode
          '
-medmodel_result <- sem(model, data = df_e)
+medmodel_result <- sem(model, data = II_psycorona_df_preproc)
 
 summary(medmodel_result, fit.measures=TRUE, standardized = TRUE)
 ```

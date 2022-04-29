@@ -81,6 +81,14 @@ obs_df <- obs_df %>% remove_all_labels(.) %>%
 obs_df <- obs_df[!(duplicated(obs_df$T1PROLIFIC_PID)), ]
 ```
 
+```{r}
+# raw data 
+III_observational_df_raw <- obs_df %>%
+  dplyr::select(matches("occ|finstrain|quitint|concom|affcom|coown|found|employees|year|month|edu|lang|timebuiss")) 
+
+write.csv(III_observational_df_raw,"../raw_data/III_observational_df_raw.csv", row.names = FALSE)
+```
+
 
 ### Sample overviews
 
@@ -164,6 +172,13 @@ obs_df<- obs_df_nona
 cat("Final sample size: ", nrow(obs_df), "\n")
 ```
 
+```{r}
+III_observational_df_preproc <- obs_df %>%
+  dplyr::select(matches("occ|employees|coown|indu|locat|age_1|gender|lang|edu|timeb|quitfinstrain|T2currententre|T2quit|finstrain_\\d$|quitint|affcom|concom")) 
+## preprocessed dataset 
+write.csv(III_observational_df_preproc,"../preprocessed_data/III_observational_df_preproc.csv", row.names = FALSE)
+```
+
 ### Participant characteristics
 
 ```{r}
@@ -206,7 +221,7 @@ library(sjlabelled)
 library(data.table)
 
 comp_dat <- obs_df %>%
-  dplyr::select(dplyr::matches("cope_1|cope_2|cope_3|emocope|finstrain_\\d$|chal|threat|satis|quitint|^NA|^PA|employable|affcom|concom|lifesat|vita|normcom|entresat|jobsat")) %>% remove_all_labels(.) %>% .[, !sapply(., is.character)]
+  dplyr::select(dplyr::matches("finstrain_\\d$|quitint|affcom|concom")) %>% remove_all_labels(.) %>% .[, !sapply(., is.character)]
 
 demo_dat <- obs_df %>%
   dplyr::select(dplyr::matches("occ|employees|coown|indu|locat|age_1|gender|lang|edu|timeb|quitfinstrain|T2currententre|T2quit")) %>% dplyr::select(-dplyr::matches("TEXT")) %>% remove_all_labels(.)
@@ -244,7 +259,7 @@ DT::datatable(
 
 ## Correlations
 
-```{r include = TRUE}
+```{r include = FALSE}
 cor <- round(cor(comp_df, use="pairwise.complete.obs"), 2)
 
 library(kableExtra)
@@ -266,7 +281,7 @@ comp_df_sel <- comp_df %>% dplyr::select(T1affcom, T1concom, T1finstrain, T2quit
 ```
 
 
-```{r}
+```{r include = TRUE}
 library(Hmisc)
 comp_df = comp_df_sel  %>% .[, c(3, 1, 2, 5, 6, 7, 8, 4)]
 
@@ -334,9 +349,10 @@ fit <- cfa(com_FA , data=obs_df)
 summary(fit, fit.measures=TRUE)
 ```
 
-### Modification indices > 9
+
 
 ```{r include = F}
+### Modification indices > 9
 modificationindices(fit) %>%
   as_data_frame() %>%
   arrange(-mi) %>%
@@ -349,7 +365,7 @@ modificationindices(fit) %>%
 
 ### Step 1
 
-```{r}
+```{r include = TRUE}
 model <- '
 T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 
 T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3 
@@ -357,15 +373,16 @@ T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3
              T2quitint ~ c*T1finstrain +  control1*T1age_1 + control2*T1gender + control4*T1timebuiss  + control5*T1coown
          '
 set.seed(12)
-step1 <- sem(model, data = obs_df, se = "bootstrap", bootstrap = 5000)
+step1 <- sem(model, data = obs_df, se = "bootstrap", bootstrap = 100) # bootstrap set down to 100 to make estimation faster, 5000 in original  
 
 summary(step1, fit.measures = TRUE)
 
 out_df1 = medmodel(step= step1)
 ```
+
 ### Step 2
 
-```{r}
+```{r include = TRUE}
 model <- '
 T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 
 T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3 
@@ -382,7 +399,7 @@ T1affcom =~ T1affcom_1 + T1affcom_2 + T1affcom_3
              total := c + (a1*b1)
          '
 set.seed(12)
-step2 <- sem(model, data = obs_df, se = "bootstrap", bootstrap = 5000)
+step2 <- sem(model, data = obs_df, se = "bootstrap", bootstrap = 100) # bootstrap set down to 100 to make estimation faster, 5000 in original  
 out_df2 =  medmodel(step= step2)
 
 
@@ -402,9 +419,9 @@ model_parameters(
 ```
 
 
-### Step 2-2
+### Exploratory: Continuance commitment as mediator 
 
-```{r}
+```{r include = TRUE}
 model <- '
 T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 
 T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3 
@@ -421,7 +438,7 @@ Tconcom =~ T1concom_1 + T1concom_2 + T1concom_3
              total := c + (a1*b1)
          '
 set.seed(12)
-step2_2 <- sem(model, data = obs_df, se = "bootstrap", bootstrap = 5000)
+step2_2 <- sem(model, data = obs_df, se = "bootstrap", bootstrap = 100) # bootstrap set down to 100 to make estimation faster, 5000 in original  
 out_df2_2 =  medmodel(step= step2_2)
 
 
@@ -441,9 +458,8 @@ model_parameters(
 ```
 
 
+### Exploratory: Continuance and affective commitment as mediators
 
-
-### Step 3
 
 ```{r include = T}
 model2 <- '
@@ -469,7 +485,7 @@ T1concom =~ T1concom_1 + T1concom_2 + T1concom_3
              T1affcom ~~ T1concom
          '
 set.seed(12)
-step3 <- sem(model2, data = obs_df, se = "bootstrap", bootstrap = 5000)
+step3 <- sem(model2, data = obs_df, se = "bootstrap", bootstrap = 100) # bootstrap set down to 100 to make estimation faster, 5000 in original  
 out_df3 =  medmodel(step= step3)
 summary(step3, fit.measures = TRUE)
 
@@ -489,23 +505,8 @@ model_parameters(
 parameterEstimates(step3)
 ```
 
-```{r}
-out_df <- rbind(out_df1, out_df2, out_df2_2, out_df3)
-print(xtable(out_df, type = "latex"), file = "../output/paras_mod3.tex", include.rownames = F ,sanitize.text.function = function(x){x})
-```
 
 
-```{r}
-library("semTable")
-semTable(list("Single mediation" = medmodel_result, "Double mediation" = medmodel_result2), file = NULL, paramSets = c("slopes","constructed","fits"),
-         paramSetLabels = c("slopes" = "Direct effects", "constructed" = "Indirect and total effects","fits" = "Fit Indices"), 
-         columns = c(est = "Est", se = "SE", p = "\textit{p}"),
-         varLabels = c("T1finstrain" = "T1 Fin. stress", "T1affcom" = "T1 Affective com.", "T2quitint" = "T2 Quit intention","T1concom" = "T1 Continuance com.",  "a1b1" = "Indirect effect", "a2b2" = "Indirect effect", "T1gender" = "Gender", "T1age_1" = "Age", "T1employable" = "T1 empployability", "T1timebuiss" = "Business age",
-                       "total" = "Total effect"), groups = NULL,
-         type = "latex", table.float = FALSE, caption = NULL,
-         label = NULL, longtable = TRUE,
-         centering = "siunitx", alpha = c(0.05, 0.01, 0.001))
-```
 
 
 

@@ -48,38 +48,47 @@ Vignette_df  <- Vignette_df %>% dplyr::rename(
 )
 ```
 
+
+
+```{r}
+## raw dataset 
+I_vignette_df_raw <- Vignette_df 
+
+write.csv(I_vignette_df_raw,"../raw_data/I_vignette_df_raw.csv", row.names = FALSE)
+```
+
 ## Preparation
 
 ```{r  include = TRUE}
-cat("Number of participants who are not entrepreneurs:", nrow(Vignette_df) - nrow(Vignette_df[!(Vignette_df$occ == 3),]), "\n")
-Vignette_df <-Vignette_df[!(Vignette_df$occ == 3),]
+cat("Number of participants who are not entrepreneurs:", nrow(I_vignette_df_raw) - nrow(I_vignette_df_raw[!(I_vignette_df_raw$occ == 3),]), "\n")
+I_vignette_df_raw <-I_vignette_df_raw[!(I_vignette_df_raw$occ == 3),]
 
-cat("Number of entrepreneurs in the sample:", nrow(Vignette_df))
+cat("Number of entrepreneurs in the sample:", nrow(I_vignette_df_raw))
 ```
 
 ```{r include = TRUE}
 ## Remove non-founders
-cat("Number of participants who are not involved in founding:", nrow(Vignette_df) - nrow(Vignette_df[!(Vignette_df$found==2),]), "\n")
-Vignette_df<-Vignette_df[!(Vignette_df$found==2),]
+cat("Number of participants who are not involved in founding:", nrow(I_vignette_df_raw) - nrow(I_vignette_df_raw[!(I_vignette_df_raw$found==2),]), "\n")
+I_vignette_df_raw<-I_vignette_df_raw[!(I_vignette_df_raw$found==2),]
 ```
 
 ```{r}
 library(zoo)
 library(lubridate)
 # Make years since business foundation 
-Vignette_df$year <- as.numeric(names(attr(Vignette_df$year_1,"labels")[match(Vignette_df$year_1,attr(Vignette_df$year_1,"labels"))]))
+I_vignette_df_raw$year <- as.numeric(names(attr(I_vignette_df_raw$year_1,"labels")[match(I_vignette_df_raw$year_1,attr(I_vignette_df_raw$year_1,"labels"))]))
 
-Vignette_df$month <- (names(attr(Vignette_df$month_1,"labels")[match(Vignette_df$month_1,attr(Vignette_df$month_1,"labels"))]))
-
-
-Vignette_df$t1timebuiss <- as.yearmon(paste(Vignette_df$year, Vignette_df$month), "%Y %b")
-
-Vignette_df$t1timebuiss <- as_date(Vignette_df$t1timebuiss)
-
-Vignette_df$RecordedDate <- as_date(Vignette_df$RecordedDate)
+I_vignette_df_raw$month <- (names(attr(I_vignette_df_raw$month_1,"labels")[match(I_vignette_df_raw$month_1,attr(I_vignette_df_raw$month_1,"labels"))]))
 
 
-Vignette_df$t1timebuiss <- as.numeric(difftime(Vignette_df$RecordedDate, Vignette_df$t1timebuiss, UTC,
+I_vignette_df_raw$t1timebuiss <- as.yearmon(paste(I_vignette_df_raw$year, I_vignette_df_raw$month), "%Y %b")
+
+I_vignette_df_raw$t1timebuiss <- as_date(I_vignette_df_raw$t1timebuiss)
+
+I_vignette_df_raw$RecordedDate <- as_date(I_vignette_df_raw$RecordedDate)
+
+
+I_vignette_df_raw$t1timebuiss <- as.numeric(difftime(I_vignette_df_raw$RecordedDate, I_vignette_df_raw$t1timebuiss, UTC,
          units = c("days")))
 
 ```
@@ -87,15 +96,15 @@ Vignette_df$t1timebuiss <- as.numeric(difftime(Vignette_df$RecordedDate, Vignett
 
 ```{r include = TRUE}
 ## Assign ID variable
-Vignette_df$ID = seq.int(nrow(Vignette_df)) 
+I_vignette_df_raw$ID = seq.int(nrow(I_vignette_df_raw)) 
 
 ### Attention checks
-vignette_df_fails = Vignette_df %>% dplyr::select(chal_4,threat_4,satis_4)
+I_vignette_df_raw_fails = I_vignette_df_raw %>% dplyr::select(chal_4,threat_4,satis_4)
 
 ## create attention fails df 
-att_1 <- Vignette_df[Vignette_df$chal_4 %in% c(1, 2, 3, 5), ]
-att_2 <- Vignette_df[Vignette_df$threat_4 %in% c(1,2, 3, 5), ]
-att_3 <- Vignette_df[Vignette_df$satis_4 %in% c(1, 3, 4, 5, 6, 7), ]
+att_1 <- I_vignette_df_raw[I_vignette_df_raw$chal_4 %in% c(1, 2, 3, 5), ]
+att_2 <- I_vignette_df_raw[I_vignette_df_raw$threat_4 %in% c(1,2, 3, 5), ]
+att_3 <- I_vignette_df_raw[I_vignette_df_raw$satis_4 %in% c(1, 3, 4, 5, 6, 7), ]
 
 attention_fail <- rbind(att_1, att_2, att_3) %>%
   as_tibble(.)
@@ -105,12 +114,12 @@ Rows_fails <- attention_fail$ID %in% ID_vals[ID_vals$Freq > 0,1]
 Att_fails <- attention_fail[Rows_fails,]
 
 ## exclude attention fails (two or more fails)
-Vignette_df <- Vignette_df[!(Vignette_df$ID %in% Att_fails$ID),]
+I_vignette_df_raw <- I_vignette_df_raw[!(I_vignette_df_raw$ID %in% Att_fails$ID),]
 
 cat("Number of T1 attention fails (at least one of three attention check items failed):", nrow(unique(Att_fails)) , "\n")
-cat("Number of participants after T1 attention fails removed:", nrow(Vignette_df) , "\n")
+cat("Number of participants after T1 attention fails removed:", nrow(I_vignette_df_raw) , "\n")
 
-Vignette_df <- Vignette_df[, -which(names(Vignette_df) %in% c("chal_4","threat_4", "satis_4"))]
+I_vignette_df_raw <- I_vignette_df_raw[, -which(names(I_vignette_df_raw) %in% c("chal_4","threat_4", "satis_4"))]
 
 ```
 
@@ -119,15 +128,15 @@ Vignette_df <- Vignette_df[, -which(names(Vignette_df) %in% c("chal_4","threat_4
 ## NA on model variables 
 ## 
 # make gender = 3 NA 
-Vignette_df$gender[Vignette_df$gender ==3] = NA
+I_vignette_df_raw$gender[I_vignette_df_raw$gender ==3] = NA
 
-cat("Number of participants with missing data on model variables:", nrow(Vignette_df) - nrow(Vignette_df %>% drop_na(exp_cond, quit_1, quit_2, quit_3, age_1,
+cat("Number of participants with missing data on model variables:", nrow(I_vignette_df_raw) - nrow(I_vignette_df_raw %>% drop_na(exp_cond, quit_1, quit_2, quit_3, age_1,
                                      gender, finsit_1, finsit_2, coown, t1timebuiss)), "\n")
 
-Vignette_df<-Vignette_df %>% drop_na(exp_cond, quit_1, quit_2, quit_3, age_1,
+I_vignette_df_raw<-I_vignette_df_raw %>% drop_na(exp_cond, quit_1, quit_2, quit_3, age_1,
                                      gender, finsit_1, finsit_2, coown, t1timebuiss)
 
-cat("Final sample size:", nrow(Vignette_df))
+cat("Final sample size:", nrow(I_vignette_df_raw))
 ```
 
 ## Participant characteristics
@@ -141,33 +150,40 @@ options(qwraps2_markup = "markdown")
 ```
 
 
+```{r}
+## preprocessed dataset 
+I_vignette_df_preproc <- I_vignette_df_raw
+write.csv(I_vignette_df_preproc,"../preprocessed_data/I_vignette_df_preproc.csv", row.names = FALSE)
+```
+
+
 ```{r include = T, echo = T}
 library(janitor)
 # Age overview
-Vignette_df$age <- as.numeric(names(attr(Vignette_df$age_1,"labels")[match(Vignette_df$age_1,attr(Vignette_df$age_1,"labels"))]))
+I_vignette_df_preproc$age <- as.numeric(names(attr(I_vignette_df_preproc$age_1,"labels")[match(I_vignette_df_preproc$age_1,attr(I_vignette_df_preproc$age_1,"labels"))]))
 
-cat("Range age: ", range(Vignette_df$age,  na.rm = T))
+cat("Range age: ", range(I_vignette_df_preproc$age,  na.rm = T))
 
-cat(paste0("Mean (SD) age: ", round(mean(Vignette_df$age, na.rm = T), 1), " (", round(sd(Vignette_df$age, na.rm = T), 1), ")"))
+cat(paste0("Mean (SD) age: ", round(mean(I_vignette_df_preproc$age, na.rm = T), 1), " (", round(sd(I_vignette_df_preproc$age, na.rm = T), 1), ")"))
 
 # Coownership
-tabyl(Vignette_df$coown)
+tabyl(I_vignette_df_preproc$coown)
 
 # Country 
 library(dplyr)
 library(zoo)
 library(lubridate)
-tabyl(Vignette_df$locat)
+tabyl(I_vignette_df_preproc$locat)
 
 # Time since business foundation 
-cat("Range of days since business foundation: " , range(Vignette_df$t1timebuiss, na.rm = T))
+cat("Range of days since business foundation: " , range(I_vignette_df_preproc$t1timebuiss, na.rm = T))
 
-cat("Mean days since business foundation: ", mean(Vignette_df$t1timebuiss,  na.rm = T))
+cat("Mean days since business foundation: ", mean(I_vignette_df_preproc$t1timebuiss,  na.rm = T))
 
-cat("SD days since business foundation: ", sd(Vignette_df$t1timebuiss,  na.rm = T))
+cat("SD days since business foundation: ", sd(I_vignette_df_preproc$t1timebuiss,  na.rm = T))
 
 
-sd(Vignette_df$t1timebuiss,  na.rm = T)/365
+sd(I_vignette_df_preproc$t1timebuiss,  na.rm = T)/365
 
 ```
 
@@ -182,13 +198,13 @@ library(zoo)
 library(tidyverse)
 library("tidyverse")
 
-comp_dat <-  Vignette_df %>% dplyr::select(dplyr::matches("cope|mani|chal|threat|quit|satis|PANA")) %>% remove_all_labels(.)
+comp_dat <-  I_vignette_df_preproc %>% dplyr::select(dplyr::matches("cope|mani|chal|threat|quit|satis|PANA")) %>% remove_all_labels(.)
 
 library(tidyr)
 
 matches <- dplyr::matches
 
-comp_dat_single_item <- Vignette_df %>% dplyr::select(dplyr::matches("finsit|exp_cond|t1timebuiss|coown|indu|age|gender|lang|edu|quitting1|locat|quitting "))  %>% remove_all_labels(.) %>% dplyr::select(-matches("UserLanguage|Q52_Page_Submit|Q53_Page_Submit|_TEXT|ifelse|age_1|LocationLatitude|LocationLongitude")) 
+comp_dat_single_item <- I_vignette_df_preproc %>% dplyr::select(dplyr::matches("finsit|exp_cond|t1timebuiss|coown|indu|age|gender|lang|edu|quitting1|locat|quitting "))  %>% remove_all_labels(.) %>% dplyr::select(-matches("UserLanguage|Q52_Page_Submit|Q53_Page_Submit|_TEXT|ifelse|age_1|LocationLatitude|LocationLongitude")) 
 
   
 alph_dat <- comp_dat
@@ -226,8 +242,8 @@ library(Hmisc)
 comp_df = comp_df_vig %>% dplyr::select(-dplyr::matches("indu|locat|mani|edu")) %>% dplyr::select(exp_cond, quit, age, gender, finsit_1, finsit_2, coown, t1timebuiss)
 
 correlation_matrix<-rcorr(as.matrix(comp_df), type="pearson")
-min(correlation_matrix$n) 
-max(correlation_matrix$n) 
+#min(correlation_matrix$n) 
+#max(correlation_matrix$n) 
 
 comp_df$t1timebuiss <- comp_df$t1timebuiss/365
 
@@ -278,6 +294,7 @@ sd(cond$mani)
 * with control variables
 
 ```{r include = TRUE}
+library(lm.beta)
 model2 <- lm(quit ~  exp_cond + age + gender + finsit_1 + finsit_2 + coown + t1timebuiss , data = comp_df_vig)
 pander(summary(model2))
 
@@ -292,8 +309,10 @@ pander(summary(model2))
 lm.beta(model2)
 
 t.test(exp$quit, cond$quit, alternative = "two.sided", var.equal = FALSE)
-sd(exp$quit)
-sd(cond$quit)
+cat("SD quit int experimental condition: ", sd(exp$quit,  na.rm = T))
+cat("SD quit int control condition: ", sd(cond$quit,  na.rm = T))
+
+
 ```
 
 
