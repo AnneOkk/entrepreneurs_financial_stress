@@ -16,9 +16,6 @@ docs/*.html
 docs/*.docx
 docs/*.pdf
 
-# output files
-output/
-
 # knitr and R markdown default cache directories
 /analysis/cache/
 /analysis/figures/
