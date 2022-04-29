@@ -1,32 +1,15 @@
 # Multi study paper
 
-This is a collection of studies that are part of the investigation of the effects of entrepreneurs' financial strain on their intention to quit
+This is a collection of studies that are part of the investigation of the effects of entrepreneurs' financial stress on their intention to quit the business.
 
 Started on 2021-12-28.
 
 ## Directory structure
 
-* **R** - Resuable R code (functions etc.)
-* **analysis** - R Markdown analysis files
-* **docs** - Rendered analysis reports
-* **data** - Raw data used for analysis
-* **output** - Output files
+* **R** - Resuable R code (remote functions) used in analyses 
+* **analysis** - R Markdown analysis files (for the three studies)
+* **docs** - Rendered analysis report
+* **raw_data** - Anonymized raw data files
+* **preprocessed_data** - Anonymized preprocessed data files (after cleaning)
 
-## Data
-
-Input data files include:
-
-## Analysis
-
-Current analysis files include:
-
-* **template.Rmd** - Analysis template
-
-## Code
-
-Current code files include:
-
-## Output
-
-Output files (not in repository but created by analysis files):
 
