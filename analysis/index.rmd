@@ -6,9 +6,14 @@ output:
     theme: united 
     toc_depth: 5
     toc_float: true
+params: 
+  output_dir: "../docs"
 ---
 
-# Overview
+# GitHub: 
+
+https://github.com/AnneOkk/entrepreneurs_financial_stress
+
 
 
 ```{r, include = F, echo = F}

@@ -134,7 +134,7 @@ comp_dat <- II_psycorona_df_preproc %>%
   dplyr::select(probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03) 
 
 comp_singleitem <- II_psycorona_df_preproc %>%
-  dplyr::select(w7_SE_quit, w5_SE_quit,w5_lifeSat, SE_start_recode, age, gender, edu, coded_country_num, w5_fin_strain01, w5_SE_employees_dich) 
+  dplyr::select(w5_SE_quit, SE_start_recode, age, gender, edu, coded_country_num, w5_SE_employees_dich) 
 
 alph_dat <- comp_dat
 

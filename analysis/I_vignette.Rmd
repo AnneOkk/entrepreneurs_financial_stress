@@ -158,6 +158,11 @@ names(CodeBook) <- c("Variable name", "Description", "Values")
 write.csv(CodeBook,"../Codebooks/I_vignette_CodeBook.csv", row.names = FALSE)
 ```
 
+```{r}
+## raw dataset with attentionc hecks
+I_vignette_df_raw <- Vignette_df %>% select(matches("finsit|occ|RecordedDate|mani|quit|year|month|found|coown|indu|locat|age|gender|edu|exp_cond|chal_4|threat_4|satis_4"))
+```
+
 
 ## Preparation
 
