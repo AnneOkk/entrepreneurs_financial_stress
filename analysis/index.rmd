@@ -1,10 +1,5 @@
 ---
 title: "Entrepreneurs' financial strain"
-author: "Anne"
-date: '`r Sys.Date()`'
-knit: (function(inputFile, encoding) {
-  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../output") })
-mainfont: Times New Roman
 output:
   html_document:
     toc: true

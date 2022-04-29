@@ -51,11 +51,113 @@ Vignette_df  <- Vignette_df %>% dplyr::rename(
 
 
 ```{r}
-## raw dataset 
-I_vignette_df_raw <- Vignette_df 
 
+## raw dataset 
+I_vignette_df_raw <- Vignette_df %>% select(matches("occ|RecordedDate|mani|quit|year|month|found|coown|indu|locat|age|gender|edu|exp_cond"))
 write.csv(I_vignette_df_raw,"../raw_data/I_vignette_df_raw.csv", row.names = FALSE)
 ```
+
+```{r}
+library(labelled)
+
+var_label(I_vignette_df_raw$occ) <- "Occupational status"
+
+var_label(I_vignette_df_raw$RecordedDate) <- "Recorded date"
+
+var_label(I_vignette_df_raw$mani_1) <- "Manipulation check financial stress - 1"
+var_label(I_vignette_df_raw$mani_2) <- "Manipulation check financial stress - 2"
+var_label(I_vignette_df_raw$mani_3) <- "Manipulation check financial stress - 3"
+
+var_label(I_vignette_df_raw$quit_1) <- "Quit intention - 1"
+var_label(I_vignette_df_raw$quit_2) <- "Quit intention - 2"
+var_label(I_vignette_df_raw$quit_3) <- "Quit intention - 3"
+
+var_label(I_vignette_df_raw$locat) <- "Business location"
+
+var_label(I_vignette_df_raw$year_1) <- "Year of business foundation"
+var_label(I_vignette_df_raw$month_1) <- "Month of business foundation"
+
+var_label(I_vignette_df_raw$exp_cond) <- "Experimental or control condition"
+
+CodeBook <-
+as.data.frame(rbind(
+  c(
+    "RecordedDate",
+    var_label(I_vignette_df_raw$RecordedDate),
+    paste(get_labels(I_vignette_df_raw$RecordedDate, values = "p"), collapse = ", ")
+  ),
+  c("mani_1",
+    var_label(I_vignette_df_raw$mani_1),
+    paste(get_labels(I_vignette_df_raw$mani_1, values = "p"), collapse = ", ")
+  ),
+  c("mani_2",
+    var_label(I_vignette_df_raw$mani_2),
+    paste(get_labels(I_vignette_df_raw$mani_2, values = "p"), collapse = ", ")
+  ),
+  c("mani_3",
+    var_label(I_vignette_df_raw$mani_3),
+    paste(get_labels(I_vignette_df_raw$mani_3, values = "p"), collapse = ", ")
+  ),
+  c("quit_1",
+    var_label(I_vignette_df_raw$quit_1),
+    paste(get_labels(I_vignette_df_raw$quit_1, values = "p"), collapse = ", ")
+  ),
+  c("quit_2",
+    var_label(I_vignette_df_raw$quit_2),
+    paste(get_labels(I_vignette_df_raw$quit_2, values = "p"), collapse = ", ")
+  ),
+  c("quit_3",
+    var_label(I_vignette_df_raw$quit_3),
+    paste(get_labels(I_vignette_df_raw$quit_3, values = "p"), collapse = ", ")
+  ),
+  c("year_1",
+    var_label(I_vignette_df_raw$year_1),
+    paste(get_labels(I_vignette_df_raw$year_1, values = "p"), collapse = ", ")
+  ),
+  c("month_1",
+    var_label(I_vignette_df_raw$month_1),
+    paste(get_labels(I_vignette_df_raw$month_1, values = "p"), collapse = ", ")
+  ),
+  c("found",
+    var_label(I_vignette_df_raw$found),
+    paste(get_labels(I_vignette_df_raw$found, values = "p"), collapse = ", ")
+  ),
+  c("coown",
+    var_label(I_vignette_df_raw$coown),
+    paste(get_labels(I_vignette_df_raw$coown, values = "p"), collapse = ", ")
+  ),
+  c("indu",
+    var_label(I_vignette_df_raw$indu),
+    paste(get_labels(I_vignette_df_raw$indu, values = "p"), collapse = ", ")
+  ),
+  c("locat",
+    var_label(I_vignette_df_raw$locat),
+    paste(get_labels(I_vignette_df_raw$locat, values = "p"), collapse = ", ")
+  ),
+  c("age_1",
+    var_label(I_vignette_df_raw$age_1),
+    paste(get_labels(I_vignette_df_raw$age_1, values = "p"), collapse = ", ")
+  ),
+  c("gender",
+    var_label(I_vignette_df_raw$gender),
+    paste(get_labels(I_vignette_df_raw$gender, values = "p"), collapse = ", ")
+  ),
+  c("edu",
+    var_label(I_vignette_df_raw$edu),
+    paste(get_labels(I_vignette_df_raw$edu, values = "p"), collapse = ", ")
+  ),
+  c("exp_cond",
+    var_label(I_vignette_df_raw$exp_cond),
+    paste(get_labels(I_vignette_df_raw$exp_cond, values = "p"), collapse = ", ")
+  )
+)
+)
+
+names(CodeBook) <- c("Variable name", "Description", "Values")
+
+write.csv(CodeBook,"../Codebooks/I_vignette_CodeBook.csv", row.names = FALSE)
+```
+
 
 ## Preparation
 

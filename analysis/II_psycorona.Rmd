@@ -45,9 +45,81 @@ df_e$coded_country_fac <- factor(df_e$coded_country)
 df_e$coded_country_num <- as.numeric(df_e$coded_country_fac)
 
 II_psycorona_df_raw <- df_e %>%
-  dplyr::select( probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03, w7_SE_quit, w5_SE_quit,w5_lifeSat, SE_start_recode, age, gender, edu, coded_country_num, w5_fin_strain01, w5_SE_employees_dich, coded_country) 
+  dplyr::select( probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03, w5_SE_quit, SE_start_recode, age, gender, edu, coded_country_num, w5_SE_employees_dich, coded_country) 
 
 write.csv(II_psycorona_df_raw,"../raw_data/II_psycorona_df_raw.csv", row.names = FALSE)
+
+```
+
+```{r}
+library(labelled)
+
+var_label(II_psycorona_df_raw$coded_country) <- "Country of residence"
+var_label(II_psycorona_df_raw$w5_SE_employees_dich) <- "Employees - yes or no?"
+val_labels(II_psycorona_df_raw$w5_SE_employees_dich) <- c("Yes" = 1, "No" = 0)
+var_label(II_psycorona_df_raw$SE_start_recode) <- "Years since business foundation"
+
+
+CodeBook <-
+as.data.frame(rbind(
+  c("probSolving01",
+    var_label(II_psycorona_df_raw$probSolving01),
+    paste(get_labels(II_psycorona_df_raw$probSolving01, values = "p"), collapse = ", ")
+  ),
+ c("probSolving02",
+    var_label(II_psycorona_df_raw$probSolving02),
+    paste(get_labels(II_psycorona_df_raw$probSolving02, values = "p"), collapse = ", ")
+  ),
+ c("probSolving03",
+    var_label(II_psycorona_df_raw$probSolving03),
+    paste(get_labels(II_psycorona_df_raw$probSolving03, values = "p"), collapse = ", ")
+  ),
+ c("fin_strain01",
+    var_label(II_psycorona_df_raw$fin_strain01),
+    paste(get_labels(II_psycorona_df_raw$fin_strain01, values = "p"), collapse = ", ")
+  ),
+ c("fin_strain02",
+    var_label(II_psycorona_df_raw$fin_strain02),
+    paste(get_labels(II_psycorona_df_raw$fin_strain02, values = "p"), collapse = ", ")
+  ),
+ c("fin_strain03",
+    var_label(II_psycorona_df_raw$fin_strain03),
+    paste(get_labels(II_psycorona_df_raw$fin_strain03, values = "p"), collapse = ", ")
+  ),
+ c("w5_SE_quit",
+    var_label(II_psycorona_df_raw$w5_SE_quit),
+    paste(get_labels(II_psycorona_df_raw$w5_SE_quit, values = "p"), collapse = ", ")
+  ),
+ c("SE_start_recode",
+    var_label(II_psycorona_df_raw$SE_start_recode),
+    "ascending"
+  ),
+ c("age",
+    var_label(II_psycorona_df_raw$age),
+    paste(get_labels(II_psycorona_df_raw$age, values = "p"), collapse = ", ")
+  ),
+ c("gender",
+    var_label(II_psycorona_df_raw$gender),
+    paste(get_labels(II_psycorona_df_raw$gender, values = "p"), collapse = ", ")
+  ),
+ c("edu",
+    var_label(II_psycorona_df_raw$edu),
+    paste(get_labels(II_psycorona_df_raw$edu, values = "p"), collapse = ", ")
+  ),
+ c("w5_SE_employees_dich",
+    var_label(II_psycorona_df_raw$w5_SE_employees_dich),
+    paste(get_labels(II_psycorona_df_raw$w5_SE_employees_dich, values = "p"), collapse = ", ")
+  ),
+ c("coded_country",
+    var_label(II_psycorona_df_raw$coded_country),
+    paste(get_labels(II_psycorona_df_raw$coded_country, values = "p"), collapse = ", ")
+ )
+)
+)
+
+names(CodeBook) <- c("Variable name", "Description", "Values")
+
+write.csv(CodeBook,"../Codebooks/II_psycorona_CodeBook.csv", row.names = FALSE)
 ```
 
 

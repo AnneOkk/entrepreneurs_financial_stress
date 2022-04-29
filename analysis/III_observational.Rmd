@@ -33,6 +33,116 @@ names(observational_T2) <- gsub("quit_2_1", "quitint_2", names(observational_T2)
 names(observational_T2) <- gsub("quit_2_2", "quitint_3", names(observational_T2))
 
 obs_df <- left_join(observational, observational_T2, by = c("T1PROLIFIC_PID" = "PROLIFIC_PID"))
+
+
+```
+
+```{r}
+# raw data 
+III_observational_df_raw <- obs_df %>%
+  dplyr::select(matches("occ$|T1finstrain|T2_quitint|T1concom|T1affcom|coown|found|employees|year|month|edu$|lang$|timebuiss|T2_quitfinstrain$")) 
+
+write.csv(III_observational_df_raw,"../raw_data/III_observational_df_raw.csv", row.names = FALSE)
+```
+
+```{r}
+library(labelled)
+CodeBook <-
+as.data.frame(rbind(
+  c("T1occ",
+    var_label(III_observational_df_raw$T1occ),
+    paste(get_labels(III_observational_df_raw$T1occ, values = "p"), collapse = ", ")
+  ),
+ c("T1finstrain_1",
+    var_label(III_observational_df_raw$T1finstrain_1),
+    paste(get_labels(III_observational_df_raw$T1finstrain_1, values = "p"), collapse = ", ")
+  ),
+ c("T1finstrain_2",
+    var_label(III_observational_df_raw$T1finstrain_2),
+    paste(get_labels(III_observational_df_raw$T1finstrain_2, values = "p"), collapse = ", ")
+  ),
+ c("T1finstrain_3",
+    var_label(III_observational_df_raw$T1finstrain_3),
+    paste(get_labels(III_observational_df_raw$T1finstrain_3, values = "p"), collapse = ", ")
+  ),
+ c("T1concom_1",
+    var_label(III_observational_df_raw$T1concom_1),
+    paste(get_labels(III_observational_df_raw$T1concom_1, values = "p"), collapse = ", ")
+  ),
+ c("T1concom_2",
+    var_label(III_observational_df_raw$T1concom_2),
+    paste(get_labels(III_observational_df_raw$T1concom_2, values = "p"), collapse = ", ")
+  ),
+ c("T1concom_3",
+    var_label(III_observational_df_raw$T1concom_3),
+    paste(get_labels(III_observational_df_raw$T1concom_3, values = "p"), collapse = ", ")
+  ),
+ c("T1affcom_1",
+    var_label(III_observational_df_raw$T1affcom_1),
+    paste(get_labels(III_observational_df_raw$T1affcom_1, values = "p"), collapse = ", ")
+  ),
+ c("T1affcom_2",
+    var_label(III_observational_df_raw$T1affcom_2),
+    paste(get_labels(III_observational_df_raw$T1affcom_2, values = "p"), collapse = ", ")
+  ),
+ c("T1affcom_3",
+    var_label(III_observational_df_raw$T1affcom_3),
+    paste(get_labels(III_observational_df_raw$T1affcom_3, values = "p"), collapse = ", ")
+ ),
+ c("T1year_1",
+    var_label(III_observational_df_raw$T1year_1),
+    paste(get_labels(III_observational_df_raw$T1year_1, values = "p"), collapse = ", ")
+ ),
+ c("T1month_1",
+    var_label(III_observational_df_raw$T1month_1),
+    paste(get_labels(III_observational_df_raw$T1month_1, values = "p"), collapse = ", ")
+ ),
+ c("T1found",
+    var_label(III_observational_df_raw$T1found),
+    paste(get_labels(III_observational_df_raw$T1found, values = "p"), collapse = ", ")
+ ),
+ c("T1employees",
+    var_label(III_observational_df_raw$T1employees),
+    paste(get_labels(III_observational_df_raw$T1employees, values = "p"), collapse = ", ")
+ ),
+ c("T1coown",
+    var_label(III_observational_df_raw$T1coown),
+    paste(get_labels(III_observational_df_raw$T1coown, values = "p"), collapse = ", ")
+ ),
+  c("T1lang",
+    var_label(III_observational_df_raw$T1lang),
+    paste(get_labels(III_observational_df_raw$T1lang, values = "p"), collapse = ", ")
+ ),
+  c("T1edu",
+    var_label(III_observational_df_raw$T1edu),
+    paste(get_labels(III_observational_df_raw$T1edu, values = "p"), collapse = ", ")
+ ),
+  c("T2_occ",
+    var_label(III_observational_df_raw$T2_occ),
+    paste(get_labels(III_observational_df_raw$T2_occ, values = "p"), collapse = ", ")
+ ),
+  c("T2_quitfinstrain",
+    var_label(III_observational_df_raw$T2_quitfinstrain),
+    paste(get_labels(III_observational_df_raw$T2_quitfinstrain, values = "p"), collapse = ", ")
+ ),
+  c("T2_quitint_1",
+    var_label(III_observational_df_raw$T2_quitint_1),
+    paste(get_labels(III_observational_df_raw$T2_quitint_1, values = "p"), collapse = ", ")
+ ),
+  c("T2_quitint_2",
+    var_label(III_observational_df_raw$T2_quitint_2),
+    paste(get_labels(III_observational_df_raw$T2_quitint_2, values = "p"), collapse = ", ")
+ ),
+  c("T2_quitint_3",
+    var_label(III_observational_df_raw$T2_quitint_3),
+    paste(get_labels(III_observational_df_raw$T2_quitint_3, values = "p"), collapse = ", ")
+ )
+)
+)
+
+names(CodeBook) <- c("Variable name", "Description", "Values")
+
+write.csv(CodeBook,"../Codebooks/III_observational_CodeBook.csv", row.names = FALSE)
 ```
 
 ### Recode
@@ -81,13 +191,6 @@ obs_df <- obs_df %>% remove_all_labels(.) %>%
 obs_df <- obs_df[!(duplicated(obs_df$T1PROLIFIC_PID)), ]
 ```
 
-```{r}
-# raw data 
-III_observational_df_raw <- obs_df %>%
-  dplyr::select(matches("occ|finstrain|quitint|concom|affcom|coown|found|employees|year|month|edu|lang|timebuiss")) 
-
-write.csv(III_observational_df_raw,"../raw_data/III_observational_df_raw.csv", row.names = FALSE)
-```
 
 
 ### Sample overviews
