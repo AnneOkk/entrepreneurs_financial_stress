@@ -23,11 +23,10 @@
 .Rproj.user
 
 
-# Student study - not relevant for multipaper
+# Student study and extended - not relevant for multipaper
 *students*
+*extended*
 
-# psycorona extended
-psycorona_extended*
 
 # DS Store
 *DS_Store
