@@ -6,11 +6,26 @@ Started on 2021-12-28.
 
 ## Directory structure
 
-* **R** - Resuable R code (remote functions) used in analyses 
-* **analysis** - R Markdown analysis files (for the three studies)
-* **docs** - Rendered analysis report
-* **Codebooks** - Codebooks for the three studies
-* **raw_data** - Anonymized raw data files
-* **preprocessed_data** - Anonymized preprocessed data files (after cleaning)
+*Excluded* (can be requested):
+* **01_Ethics_application_and_approval** - Ethics documents
+* **02_Research_materials** - Questionnaires
 
+*Included*:
+* **03_Data** - Contains anonymized raw and processed data
+* **04_syntax** - R Markdown analysis file, run from "RUN FROM HERE"
 
+## 03_Data
+
+Input data files include:
+
+* **raw_data** - raw anonymized data
+* **preprocessed_data** - processed data after cleaning and recoding etc
+
+## 04_syntax
+
+* Analysis files
+* **R** - custom R functions used in analyses
+
+## docs
+
+* **index.html** - rendered report

@@ -38,7 +38,7 @@ III_observational_df_raw_full <- left_join(observational, observational_T2, by =
 III_observational_df_raw <- III_observational_df_raw_full %>%
   dplyr::select(matches("occ$|T1finstrain|T2_quitint|T1concom|T1affcom|coown|found|employees|year|month|edu$|lang$|timebuiss|T2_quitfinstrain$")) 
 
-write.csv(III_observational_df_raw,"../raw_data/III_observational_df_raw.csv", row.names = FALSE)
+write.csv(III_observational_df_raw,"../03_Data/raw_data/III_observational_df_raw.csv", row.names = FALSE)
 ```
 
 
@@ -139,7 +139,7 @@ as.data.frame(rbind(
 
 names(CodeBook) <- c("Variable name", "Description", "Values")
 
-write.csv(CodeBook,"../Codebooks/III_observational_CodeBook.csv", row.names = FALSE)
+write.csv(CodeBook,"../02_Research_materials/Codebooks/III_observational_CodeBook.csv", row.names = FALSE)
 ```
 
 ## PREPROCESSING START 
@@ -280,7 +280,7 @@ cat("Final sample size: ", nrow(III_observational_df_raw_full), "\n")
 III_observational_df_preproc <- III_observational_df_raw_full %>%
   dplyr::select(matches("occ|employees|coown|indu|locat|age_1|gender|lang|edu|timeb|quitfinstrain|T2currententre|T2quit|finstrain_\\d$|quitint|affcom|concom")) 
 ## preprocessed dataset 
-write.csv(III_observational_df_preproc,"../preprocessed_data/III_observational_df_preproc.csv", row.names = FALSE)
+write.csv(III_observational_df_preproc,"../03_Data/preprocessed_data/III_observational_df_preproc.csv", row.names = FALSE)
 ```
 
 ## Participant characteristics
@@ -367,7 +367,8 @@ DT::datatable(
 cor <- round(cor(comp_df, use="pairwise.complete.obs"), 2)
 
 library(kableExtra)
-
+res2 <- rcorr(as.matrix(comp_df))
+res2$n
 corstar_select <- data.frame(corstars(comp_df, removeTriangle = "none", result="none"))
 
 corstar_select %>%
@@ -470,6 +471,7 @@ modificationindices(fit) %>%
 ### Step 1
 
 ```{r include = TRUE}
+library(broom)
 model <- '
 T2quitint =~ T2quitint_1 + T2quitint_2 + T2quitint_3 
 T1finstrain =~ T1finstrain_1 + T1finstrain_2 + T1finstrain_3 

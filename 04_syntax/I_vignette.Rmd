@@ -30,7 +30,7 @@ write_sav(Vignette_df, "../data/Vignette_df.sav")
 ## Import data and data preprocessing 
 library(haven)
 library(tidyverse)
-Vignette_df <- read_sav("../data/Vignette_df.sav")
+Vignette_df <- read_sav("../03_Data/Vignette_df.sav")
 
 Vignette_df <- Vignette_df %>% dplyr::mutate(exp_cond = ifelse(group == "control", 1,
                                              ifelse(group == "intervention", 2, NA)))
@@ -53,7 +53,7 @@ Vignette_df  <- Vignette_df %>% dplyr::rename(
 
 ## raw dataset 
 I_vignette_df_raw <- Vignette_df %>% select(matches("occ|RecordedDate|mani|quit|year|month|found|coown|indu|locat|age|gender|edu|exp_cond"))
-write.csv(I_vignette_df_raw,"../raw_data/I_vignette_df_raw.csv", row.names = FALSE)
+write.csv(I_vignette_df_raw,"../03_Data/raw_data/I_vignette_df_raw.csv", row.names = FALSE)
 ```
 
 ## PREPROCESSING START 
@@ -61,6 +61,7 @@ write.csv(I_vignette_df_raw,"../raw_data/I_vignette_df_raw.csv", row.names = FAL
 
 ```{r}
 library(labelled)
+library(sjlabelled)
 
 var_label(I_vignette_df_raw$occ) <- "Occupational status"
 
@@ -157,7 +158,7 @@ as.data.frame(rbind(
 
 names(CodeBook) <- c("Variable name", "Description", "Values")
 
-write.csv(CodeBook,"../Codebooks/I_vignette_CodeBook.csv", row.names = FALSE)
+write.csv(CodeBook,"../02_Research_materials/Codebooks/I_vignette_CodeBook.csv", row.names = FALSE)
 ```
 
 ```{r}
@@ -262,7 +263,7 @@ options(qwraps2_markup = "markdown")
 ```{r}
 ## preprocessed dataset 
 I_vignette_df_preproc <- I_vignette_df_raw
-write.csv(I_vignette_df_preproc,"../preprocessed_data/I_vignette_df_preproc.csv", row.names = FALSE)
+write.csv(I_vignette_df_preproc,"../03_Data/preprocessed_data/I_vignette_df_preproc.csv", row.names = FALSE)
 ```
 
 
@@ -404,6 +405,7 @@ sd(cond$mani)
 
 ```{r include = TRUE}
 library(lm.beta)
+library(pander)
 model2 <- lm(quit ~  exp_cond + age + gender + finsit_1 + finsit_2 + coown + t1timebuiss , data = comp_df_vig)
 pander(summary(model2))
 
