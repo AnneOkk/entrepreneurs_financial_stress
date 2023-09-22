@@ -125,7 +125,6 @@ write.csv(CodeBook,"../02_Research_materials/Codebooks/II_psycorona_CodeBook.csv
 
 
 ```{r}
-library(multicon)
 
 # remove NA on relevant variables
 # model <- lm(w5_SE_quit ~ fin_strain +  age + gender + SE_start_recode , data = comp_df)
@@ -145,7 +144,7 @@ comp_split <- comp_dat %>%
 alph_split <- alph_dat %>%
   split.default(sub("0.*", "", names(alph_dat))) 
 
-comp <- purrr::map(comp_split, ~ multicon::composite(.x, nomiss = 0.8), data = .x)
+comp <- purrr::map(comp_split, ~ rowMeans(.x), data = .x)
 alph <- purrr::map(alph_split, ~ psych::alpha(.x), data = .x) %>%
   purrr::map(~ .x$total)
 

@@ -310,17 +310,44 @@ cat(paste0(" Mean (SD) business age: ", round(mean(III_observational_df_preproc$
 # Coownership
 tabyl(III_observational_df_preproc$T1coown)
 
+# Industry 
+
+# 1 Information, Communications, or Technology
+# 2 Finance, Real Estate, or Business Services
+# 3 Health, Education, Government, or Social and Consumer Services
+# 4 Wholesale, Retail
+# 5 Manufacturing, Logistics
+# 6 Agriculture, Extractive, or Construction
+# 7 Other, namely:
+III_observational_df_preproc$T1indu <- ifelse(III_observational_df_preproc$T1indu_7_TEXT == "Jewellery" | III_observational_df_preproc$T1indu_7_TEXT == "food service", 4, III_observational_df_preproc$T1indu)
+
+III_observational_df_preproc$T1indu <- ifelse(III_observational_df_preproc$T1indu_7_TEXT == "Writing services" | III_observational_df_preproc$T1indu_7_TEXT == "Pet services" | III_observational_df_preproc$T1indu_7_TEXT == "pet" | III_observational_df_preproc$T1indu_7_TEXT == "Personal services" | III_observational_df_preproc$T1indu_7_TEXT == "Services" | III_observational_df_preproc$T1indu_7_TEXT == "hospitality" | III_observational_df_preproc$T1indu_7_TEXT == "Courier and delivery" |  III_observational_df_preproc$T1indu_7_TEXT == "translation" | III_observational_df_preproc$T1indu_7_TEXT == "cleaning" |  III_observational_df_preproc$T1indu_7_TEXT == "legal" |  III_observational_df_preproc$T1indu_7_TEXT == "law" | III_observational_df_preproc$T1indu_7_TEXT == "Teaching sewing, alterations, dressmaking,  sewing" | III_observational_df_preproc$T1indu_7_TEXT == "Hospitality" | III_observational_df_preproc$T1indu_7_TEXT == "Food" | III_observational_df_preproc$T1indu_7_TEXT == "Maintenance" | III_observational_df_preproc$T1indu_7_TEXT == "Health" | III_observational_df_preproc$T1indu_7_TEXT == "taxi" | III_observational_df_preproc$T1indu_7_TEXT == "Sports Coaching" | III_observational_df_preproc$T1indu_7_TEXT == "Wellbeing" | III_observational_df_preproc$T1indu_7_TEXT == "Tourism" | III_observational_df_preproc$T1indu_7_TEXT == "Fitness" | III_observational_df_preproc$T1indu_7_TEXT == "Complementary therapy" | III_observational_df_preproc$T1indu_7_TEXT == "Hospitality" | III_observational_df_preproc$T1indu_7_TEXT == "hospitality" | III_observational_df_preproc$T1indu_7_TEXT == "[ersonal services" | III_observational_df_preproc$T1indu_7_TEXT == "Legal support and publishing" | III_observational_df_preproc$T1indu_7_TEXT == "Professional Services" | III_observational_df_preproc$T1indu_7_TEXT == "Tourism", 3, III_observational_df_preproc$T1indu)
+
+III_observational_df_preproc$T1indu <- ifelse(III_observational_df_preproc$T1indu_7_TEXT == "Design" | III_observational_df_preproc$T1indu_7_TEXT == "Fine art restoration" | III_observational_df_preproc$T1indu_7_TEXT == "Graphic Design" | III_observational_df_preproc$T1indu_7_TEXT == "Art/Engineering/Photography" |  III_observational_df_preproc$T1indu_7_TEXT == "Arts" | III_observational_df_preproc$T1indu_7_TEXT == "Arts" | III_observational_df_preproc$T1indu_7_TEXT == "Arts/Entertainment" | III_observational_df_preproc$T1indu_7_TEXT == "Events" | III_observational_df_preproc$T1indu_7_TEXT == "Art" | III_observational_df_preproc$T1indu_7_TEXT == "photography and videography" | III_observational_df_preproc$T1indu_7_TEXT == "arts" | III_observational_df_preproc$T1indu_7_TEXT == "Art and design" | III_observational_df_preproc$T1indu_7_TEXT == "Handmade craft" | III_observational_df_preproc$T1indu_7_TEXT == "Entertainment and Arts" | III_observational_df_preproc$T1indu_7_TEXT == "Entertainment" | III_observational_df_preproc$T1indu_7_TEXT == "Illustration" | III_observational_df_preproc$T1indu_7_TEXT == "Printmaking/Bookbinding/Design" | III_observational_df_preproc$T1indu_7_TEXT == "Creative industry" | III_observational_df_preproc$T1indu_7_TEXT == "creative arts" | III_observational_df_preproc$T1indu_7_TEXT == "Design" | III_observational_df_preproc$T1indu_7_TEXT == "Entertainment and events" | III_observational_df_preproc$T1indu_7_TEXT == "Events industry/entertainment" | III_observational_df_preproc$T1indu_7_TEXT == "Decorative" | III_observational_df_preproc$T1indu_7_TEXT == "Literature" | III_observational_df_preproc$T1indu_7_TEXT == "Art and Design" | III_observational_df_preproc$T1indu_7_TEXT == "Arts" | III_observational_df_preproc$T1indu_7_TEXT == "Photography" | III_observational_df_preproc$T1indu_7_TEXT == "Arts and crafts" | III_observational_df_preproc$T1indu_7_TEXT == "Graphic Design" | III_observational_df_preproc$T1indu_7_TEXT == "entertainment" | III_observational_df_preproc$T1indu_7_TEXT == "Design" | III_observational_df_preproc$T1indu_7_TEXT == "personal services, photography" | III_observational_df_preproc$T1indu_7_TEXT == "Art" | III_observational_df_preproc$T1indu_7_TEXT == "Entertainment" | III_observational_df_preproc$T1indu_7_TEXT == "Artisan" | III_observational_df_preproc$T1indu_7_TEXT == "Media", 8, III_observational_df_preproc$T1indu)
+
+III_observational_df_preproc$T1indu <- ifelse(III_observational_df_preproc$T1indu_7_TEXT == "Consulting" | III_observational_df_preproc$T1indu_7_TEXT == "counselling" | III_observational_df_preproc$T1indu_7_TEXT == "Marketing", 2, III_observational_df_preproc$T1indu)
+
+III_observational_df_preproc$T1indu <- ifelse(III_observational_df_preproc$T1indu_7_TEXT == "Industrial design", 6, III_observational_df_preproc$T1indu) 
+
+III_observational_df_preproc$T1indu <- ifelse(III_observational_df_preproc$T1indu_7_TEXT == "Design/luxury items" | III_observational_df_preproc$T1indu_7_TEXT == "retail", 4, III_observational_df_preproc$T1indu)
+
+III_observational_df_preproc$T1indu <- ifelse(III_observational_df_preproc$T1indu_7_TEXT == "Trading", 5, III_observational_df_preproc$T1indu)
+
+
+III_observational_df_preproc$T1indu_7_TEXT
+
+tabyl(III_observational_df_preproc$T1indu)
+
 # Country 
 library(dplyr)
 library(zoo)
 library(lubridate)
-tabyl(III_observational_df_preproc$T1locat)
+#tabyl(III_observational_df_preproc$T1locat)
 
-
+III_observational_df_preproc[III_observational_df_preproc$T1indu == 7,]
 ```
 
 ```{r}
-library(multicon)
 library(sjlabelled)
 library(data.table)
 
@@ -340,7 +367,7 @@ comp_split <- comp_dat %>%
 alph_split <- alph_dat %>%
   split.default(sub("_.*", "", names(alph_dat))) 
 
-comp <- purrr::map(comp_split, ~ multicon::composite(.x, nomiss = 0.8), data = .x) %>% as.data.frame(.)
+comp <- purrr::map(comp_split, ~ rowMeans(.x), data = .x) %>% as.data.frame(.)
 alph <- purrr::map(alph_split, ~ psych::alpha(.x), data = .x) %>%
   purrr::map(~ .x$total)
 
@@ -366,6 +393,7 @@ DT::datatable(
 ```{r include = FALSE}
 cor <- round(cor(comp_df, use="pairwise.complete.obs"), 2)
 
+library(Hmisc)
 library(kableExtra)
 res2 <- rcorr(as.matrix(comp_df))
 res2$n
@@ -392,7 +420,7 @@ comp_df = comp_df_sel  %>% .[, c(3, 1, 2, 5, 6, 7, 8, 4)]
 
 correlation_matrix<-rcorr(as.matrix(comp_df), type="pearson")
 
-comp_df$T1timebuiss <- comp_df$T1timebuiss/365
+#comp_df$T1timebuiss <- comp_df$T1timebuiss/365
 
 ## Make table 
 Mean <- round(colMeans(comp_df , na.rm =T),2)

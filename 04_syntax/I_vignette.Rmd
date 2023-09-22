@@ -30,7 +30,7 @@ write_sav(Vignette_df, "../data/Vignette_df.sav")
 ## Import data and data preprocessing 
 library(haven)
 library(tidyverse)
-Vignette_df <- read_sav("../03_Data/Vignette_df.sav")
+Vignette_df <- read_sav("../../data/Vignette_finstrain.sav")
 
 Vignette_df <- Vignette_df %>% dplyr::mutate(exp_cond = ifelse(group == "control", 1,
                                              ifelse(group == "intervention", 2, NA)))
@@ -178,6 +178,8 @@ cat("Number of entrepreneurs in the sample:", nrow(I_vignette_df_raw))
 ## Remove non-founders
 cat("Number of participants who are not involved in founding:", nrow(I_vignette_df_raw) - nrow(I_vignette_df_raw[!(I_vignette_df_raw$found==2),]), "\n")
 I_vignette_df_raw<-I_vignette_df_raw[!(I_vignette_df_raw$found==2),]
+cat("Number of founders in the sample:", nrow(I_vignette_df_raw))
+
 ```
 
 ```{r}
@@ -264,6 +266,7 @@ options(qwraps2_markup = "markdown")
 ## preprocessed dataset 
 I_vignette_df_preproc <- I_vignette_df_raw
 write.csv(I_vignette_df_preproc,"../03_Data/preprocessed_data/I_vignette_df_preproc.csv", row.names = FALSE)
+
 ```
 
 
@@ -274,7 +277,7 @@ I_vignette_df_preproc$age <- as.numeric(names(attr(I_vignette_df_preproc$age_1,"
 
 cat("Range age: ", range(I_vignette_df_preproc$age,  na.rm = T))
 
-cat(paste0("Mean (SD) age: ", round(mean(I_vignette_df_preproc$age, na.rm = T), 1), " (", round(sd(I_vignette_df_preproc$age, na.rm = T), 1), ")"))
+cat(paste0("Mean (SD) age: ", round(mean(I_vignette_df_preproc$age, na.rm = T), 2), " (", round(sd(I_vignette_df_preproc$age, na.rm = T), 2), ")"))
 
 # Coownership
 tabyl(I_vignette_df_preproc$coown)
@@ -288,19 +291,51 @@ tabyl(I_vignette_df_preproc$locat)
 # Time since business foundation 
 cat("Range of days since business foundation: " , range(I_vignette_df_preproc$t1timebuiss, na.rm = T))
 
-cat("Mean days since business foundation: ", mean(I_vignette_df_preproc$t1timebuiss,  na.rm = T))
+cat("Mean years since business foundation: ", mean(I_vignette_df_preproc$t1timebuiss/365,  na.rm = T))
 
 cat("SD days since business foundation: ", sd(I_vignette_df_preproc$t1timebuiss,  na.rm = T))
 
-
 sd(I_vignette_df_preproc$t1timebuiss,  na.rm = T)/365
 
+tabyl(I_vignette_df_preproc$locat)
+tabyl(I_vignette_df_preproc$gender)
+
+tabyl(I_vignette_df_preproc$exp_cond)
+
+# Industry (8 = Arts and entertainment)
+I_vignette_df_preproc$indu <- ifelse(I_vignette_df_preproc$indu_7_TEXT == "Music/Education" | I_vignette_df_preproc$indu_7_TEXT  == "Art & Media" | I_vignette_df_preproc$indu_7_TEXT  == "Entertainment" | I_vignette_df_preproc$indu_7_TEXT  == "Arts" |  I_vignette_df_preproc$indu_7_TEXT  == "Fitness influencer and online coach" | I_vignette_df_preproc$indu_7_TEXT  == "Events" | I_vignette_df_preproc$indu_7_TEXT == "Fashion" |  I_vignette_df_preproc$indu_7_TEXT  == "Hospitality events & catering"| I_vignette_df_preproc$indu_7_TEXT == "Design" | I_vignette_df_preproc$indu_7_TEXT == "Photography" | I_vignette_df_preproc$indu_7_TEXT == "photographic" | I_vignette_df_preproc$indu_7_TEXT == "Events" |  I_vignette_df_preproc$indu_7_TEXT  == "art" | I_vignette_df_preproc$indu_7_TEXT  == "arts" | I_vignette_df_preproc$indu_7_TEXT  == "Entertainment Industry" | I_vignette_df_preproc$indu_7_TEXT  == "The arts" | I_vignette_df_preproc$indu_7_TEXT  == "Children’s Entertainment" |  I_vignette_df_preproc$indu_7_TEXT  == "Art" | I_vignette_df_preproc$indu_7_TEXT  == "Entertainment Industry/ Video Production" |                                     I_vignette_df_preproc$indu_7_TEXT  == "Arts and Entertainment" | I_vignette_df_preproc$indu_7_TEXT  == "entertainment/betting" | I_vignette_df_preproc$indu_7_TEXT  == "Balloon gifts" | I_vignette_df_preproc$indu_7_TEXT  == "Entertainment and Sales" | I_vignette_df_preproc$indu_7_TEXT  == "entertainment", 8, I_vignette_df_preproc$indu)
+
+I_vignette_df_preproc$indu <- ifelse(I_vignette_df_preproc$indu_7_TEXT == "beauty industry" | I_vignette_df_preproc$indu_7_TEXT == "beauty" | I_vignette_df_preproc$indu_7_TEXT == "Language services" | I_vignette_df_preproc$indu_7_TEXT == "Teaching" | I_vignette_df_preproc$indu_7_TEXT == "Legal" | I_vignette_df_preproc$indu_7_TEXT == "Outdoor pursuits" | I_vignette_df_preproc$indu_7_TEXT == "Education" | I_vignette_df_preproc$indu_7_TEXT  == "Tourism" |  I_vignette_df_preproc$indu_7_TEXT  == "Travel & Tourism" |
+I_vignette_df_preproc$indu_7_TEXT == "wellness" | I_vignette_df_preproc$indu_7_TEXT == "Gardening" | I_vignette_df_preproc$indu_7_TEXT == "Exercise" | I_vignette_df_preproc$indu_7_TEXT == "Cleaning" | I_vignette_df_preproc$indu_7_TEXT == "Food" | I_vignette_df_preproc$indu_7_TEXT == "Charity" | I_vignette_df_preproc$indu_7_TEXT == "Horse breeding" | I_vignette_df_preproc$indu_7_TEXT == "Training" | I_vignette_df_preproc$indu_7_TEXT == "Education" | I_vignette_df_preproc$indu_7_TEXT == "Animal Care" | I_vignette_df_preproc$indu_7_TEXT == "hospitality" | I_vignette_df_preproc$indu_7_TEXT == "Hospitality" | I_vignette_df_preproc$indu_7_TEXT == "fitness" |  I_vignette_df_preproc$indu_7_TEXT == "Personal services" |  I_vignette_df_preproc$indu_7_TEXT == "personal care" | I_vignette_df_preproc$indu_7_TEXT == "personal services" | I_vignette_df_preproc$indu_7_TEXT == "Services" | I_vignette_df_preproc$indu_7_TEXT == "services" |  I_vignette_df_preproc$indu_7_TEXT == "BEAUTY" | I_vignette_df_preproc$indu_7_TEXT == "publishing" | I_vignette_df_preproc$indu_7_TEXT == "service" | I_vignette_df_preproc$indu_7_TEXT == "Training" | I_vignette_df_preproc$indu_7_TEXT == "Hairdressing" | I_vignette_df_preproc$indu_7_TEXT == "Catering Services" |  I_vignette_df_preproc$indu_7_TEXT == "tertiary sector" | I_vignette_df_preproc$indu_7_TEXT == "pet services" | I_vignette_df_preproc$indu_7_TEXT == "home services" | I_vignette_df_preproc$indu_7_TEXT == "Psychotherapy" | I_vignette_df_preproc$indu_7_TEXT == "cosmetic" , 3, I_vignette_df_preproc$indu)
+
+I_vignette_df_preproc$indu <- ifelse(I_vignette_df_preproc$indu_7_TEXT == "marketing" | I_vignette_df_preproc$indu_7_TEXT == "Marketing" |  I_vignette_df_preproc$indu_7_TEXT == "Business services" | I_vignette_df_preproc$indu_7_TEXT == "Consultancy" | I_vignette_df_preproc$indu_7_TEXT == "Marketing and Advertising" | I_vignette_df_preproc$indu_7_TEXT == "Marketing / copywriting mainly for the tech sector" | I_vignette_df_preproc$indu_7_TEXT == "Energy Sales Services", 2, I_vignette_df_preproc$indu)
+
+I_vignette_df_preproc$indu <- ifelse(I_vignette_df_preproc$indu_7_TEXT == "Craft" | I_vignette_df_preproc$indu_7_TEXT == "hand made, textile design" | I_vignette_df_preproc$indu_7_TEXT == "craft", 5, I_vignette_df_preproc$indu)
+
+I_vignette_df_preproc$indu <- ifelse(I_vignette_df_preproc$indu_7_TEXT == "Engineering", 6, I_vignette_df_preproc$indu)
+
+I_vignette_df_preproc$indu <- ifelse(I_vignette_df_preproc$indu_7_TEXT == "transportation" | I_vignette_df_preproc$indu_7_TEXT == "Selling antiques and second hand goods.", 4, I_vignette_df_preproc$indu)
+
+I_vignette_df_preproc$indu <- ifelse(I_vignette_df_preproc$indu_7_TEXT == "3D Content Creator" | I_vignette_df_preproc$indu_7_TEXT == "Social Media and PR" , 1, I_vignette_df_preproc$indu)
+
+# assign remaining ("Arts")
+I_vignette_df_preproc$indu <- ifelse(I_vignette_df_preproc$indu == 7, 8, I_vignette_df_preproc$indu)
+
+I_vignette_df_preproc$indu
+tabyl(I_vignette_df_preproc$indu)
+
+# Information, Communications, or Technology
+# Finance, Real Estate, or Business Services
+# Health, Education, Government, or Social and Consumer Services
+# Wholesale, Retail
+# Manufacturing, Logistics
+# Agriculture, Extractive, or Construction
+# Other, namely:
 ```
 
 
 ```{r}
 ## Reliabilities 
-library(multicon)
 library("sjlabelled")
 library(lubridate)
 library(stringr)
@@ -311,6 +346,7 @@ library("tidyverse")
 comp_dat <-  I_vignette_df_preproc %>% dplyr::select(dplyr::matches("cope|mani|chal|threat|quit|satis|PANA")) %>% remove_all_labels(.)
 
 library(tidyr)
+nrow(comp_dat)
 
 matches <- dplyr::matches
 
@@ -325,7 +361,7 @@ comp_split <- comp_dat %>%
 alph_split <- alph_dat %>%
   split.default(sub("_.*", "", names(alph_dat))) 
 
-comp <- purrr::map(comp_split, ~ multicon::composite(.x, nomiss = 0.8), data = .x)
+comp <- purrr::map(comp_split, ~ rowMeans(.x), data = .x)
 alph <- purrr::map(alph_split, ~ psych::alpha(.x), data = .x) %>%
   purrr::map(~ .x$total)
 
@@ -393,7 +429,7 @@ cond = comp_df_vig[comp_df_vig$exp_cond == 1, ]
 
 t.test(exp$mani, cond$mani, alternative = "two.sided", var.equal = FALSE)
 
-sd(exp$mani)
+sd(exp$mani, na.rm = T)
 sd(cond$mani)
 ```
 

@@ -35,7 +35,7 @@
 refs/
 
 # data
-data/
+03_Data/raw_data/
 
 # output
 output/

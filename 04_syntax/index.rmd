@@ -53,10 +53,6 @@ names(df_list) <- files
 df_list <- read_in(files, directory = "../../data/", df_list = df_list)
 
 list2env(df_list,envir=.GlobalEnv)
-
-
-library(magrittr)
-
 ```
 
 ```{r, include=FALSE}
@@ -64,7 +60,6 @@ students_india <- FALSE
 I_vignette <- TRUE
 II_psycorona <- TRUE
 III_observational <- TRUE
-
 ```
 
 ```{r, child=if (students_india) 'students_india.Rmd'}
