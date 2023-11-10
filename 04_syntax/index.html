@@ -4445,14 +4445,8 @@ cat(&quot;Number of founders in the sample:&quot;, nrow(I_vignette_df_raw))</cod
 <pre><code>## The following objects are masked from &#39;package:base&#39;:
 ## 
 ##     as.Date, as.Date.numeric</code></pre>
-<pre class="r"><code>library(lubridate)</code></pre>
-<pre><code>## Loading required package: timechange</code></pre>
-<pre><code>## 
-## Attaching package: &#39;lubridate&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     date, intersect, setdiff, union</code></pre>
-<pre class="r"><code># Make years since business foundation 
+<pre class="r"><code>library(lubridate)
+# Make years since business foundation 
 I_vignette_df_raw$year &lt;- as.numeric(names(attr(I_vignette_df_raw$year_1,&quot;labels&quot;)[match(I_vignette_df_raw$year_1,attr(I_vignette_df_raw$year_1,&quot;labels&quot;))]))
 
 I_vignette_df_raw$month &lt;- (names(attr(I_vignette_df_raw$month_1,&quot;labels&quot;)[match(I_vignette_df_raw$month_1,attr(I_vignette_df_raw$month_1,&quot;labels&quot;))]))
@@ -4540,6 +4534,13 @@ cat(&quot;Range age: &quot;, range(I_vignette_df_preproc$age,  na.rm = T))</code
 <pre><code>## Mean (SD) age: 40.79 (12.56)</code></pre>
 <pre class="r"><code># Coownership
 tabyl(I_vignette_df_preproc$coown)</code></pre>
+<pre><code>## Warning: Using one column matrices in `filter()` was deprecated in dplyr 1.1.0.
+## ℹ Please use one dimensional logical vectors instead.
+## ℹ The deprecated feature was likely used in the janitor package.
+##   Please report the issue at &lt;https://github.com/sfirke/janitor/issues&gt;.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.</code></pre>
 <pre><code>##  I_vignette_df_preproc$coown   n   percent
 ##                            1 281 0.8005698
 ##                            2  70 0.1994302</code></pre>
@@ -5417,6 +5418,47 @@ semTable( medmodel_result, file = NULL, paramSets = c(&quot;slopes&quot;,&quot;c
 ## \end{longtable}
 ## 
 ## </code></pre>
+<pre class="r"><code>library(parameters)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;parameters&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:xtable&#39;:
+## 
+##     display</code></pre>
+<pre class="r"><code>model_parameters(
+  medmodel_result,
+  ci = 0.95,
+  standardize = FALSE,
+  component = c(&quot;regression&quot;, &quot;correlation&quot;, &quot;loading&quot;, &quot;defined&quot;),
+  keep = NULL,
+  drop = NULL,
+  parameters = keep,
+  verbose = TRUE
+)</code></pre>
+<pre><code>## # Loading
+## 
+## Link                        | Coefficient |   SE |       95% CI |     z |      p
+## --------------------------------------------------------------------------------
+## T2quitint =~ w5_SE_quit     |        1.00 | 0.00 | [1.00, 1.00] |       | &lt; .001
+## T1finstrain =~ fin_strain01 |        1.00 | 0.00 | [1.00, 1.00] |       | &lt; .001
+## T1finstrain =~ fin_strain02 |        0.56 | 0.05 | [0.45, 0.66] | 10.27 | &lt; .001
+## T1finstrain =~ fin_strain03 |        1.07 | 0.07 | [0.94, 1.19] | 16.09 | &lt; .001
+## 
+## # Regression
+## 
+## Link                        | Coefficient |   SE |         95% CI |     z |      p
+## ----------------------------------------------------------------------------------
+## T2quitint ~ T1finstrain     |        0.40 | 0.10 | [ 0.21,  0.59] |  4.15 | &lt; .001
+## T2quitint ~ age             |       -0.09 | 0.10 | [-0.28,  0.10] | -0.96 | 0.339 
+## T2quitint ~ gender          |        0.41 | 0.22 | [-0.02,  0.84] |  1.86 | 0.063 
+## T2quitint ~ SE_start_recode |       -0.02 | 0.01 | [-0.04,  0.00] | -2.13 | 0.033 
+## 
+## # Correlation
+## 
+## Link                      | Coefficient |   SE |       95% CI |      p
+## ----------------------------------------------------------------------
+## age ~~ gender             |        0.15 | 0.00 | [0.15, 0.15] | &lt; .001
+## age ~~ SE_start_recode    |        9.72 | 0.00 | [9.72, 9.72] | &lt; .001
+## gender ~~ SE_start_recode |        1.23 | 0.00 | [1.23, 1.23] | &lt; .001</code></pre>
 </div>
 </div>
 </div>
@@ -6607,13 +6649,8 @@ summary(step2, fit.measures = TRUE)</code></pre>
 ##                    Estimate  Std.Err  z-value  P(&gt;|z|)
 ##     a1b1              0.196    0.068    2.857    0.004
 ##     total             0.356    0.149    2.380    0.017</code></pre>
-<pre class="r"><code>library(parameters)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;parameters&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:xtable&#39;:
-## 
-##     display</code></pre>
-<pre class="r"><code>model_parameters(
+<pre class="r"><code>library(parameters)
+model_parameters(
   step2,
   ci = 0.95,
   standardize = FALSE,

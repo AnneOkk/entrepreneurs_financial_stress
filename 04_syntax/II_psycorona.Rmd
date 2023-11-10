@@ -13,8 +13,6 @@ output: html_document
 names(PsyCorona) <- gsub("PFS0", "fin_strain0", names(PsyCorona), fixed = TRUE)
 df <- PsyCorona
 
-library("dplyr")
-
 df_e <- df %>% filter(!is.na(w4_employstatus_14))
 
 df_e <-  df_e[!is.na(df_e$w5_SE_quit),] 
@@ -318,5 +316,19 @@ semTable( medmodel_result, file = NULL, paramSets = c("slopes","constructed","fi
          centering = "siunitx", alpha = c(0.05, 0.01, 0.001))
 ```
 
+
+```{r}
+library(parameters)
+model_parameters(
+  medmodel_result,
+  ci = 0.95,
+  standardize = FALSE,
+  component = c("regression", "correlation", "loading", "defined"),
+  keep = NULL,
+  drop = NULL,
+  parameters = keep,
+  verbose = TRUE
+)
+```
 
 
