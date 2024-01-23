@@ -14,6 +14,7 @@ output: html_document
 # only include those with valid ID 
 Vignette_df <- Vignette_finstrain[str_length(Vignette_finstrain$ID) > 19, ] %>% dplyr::select(-dplyr::matches("Status|IPAddress|Progress|Duration|Finished|ResponseId|Name|Email|Location|Channel|Language|ID|Click|Submit|bye|Always|PROLIFIC|Reference"))
 
+Vignette_df <- 
 # create location variable 
 Vignette_df$locat <- (names(attr(Vignette_df$locat,"labels")[match(Vignette_df$locat,attr(Vignette_df$locat,"labels"))]))
 
@@ -50,9 +51,10 @@ Vignette_df  <- Vignette_df %>% dplyr::rename(
 
 
 ```{r}
+Vignette_df$ID <- seq.int(nrow(Vignette_df))
 
 ## raw dataset 
-I_vignette_df_raw <- Vignette_df %>% select(matches("occ|RecordedDate|mani|quit|year|month|found|coown|indu|locat|age|gender|edu|exp_cond"))
+I_vignette_df_raw <- Vignette_df %>% select(matches("ID|occ|RecordedDate|mani|quit|year|month|found|coown|indu|locat|age|gender|edu|exp_cond"))
 write.csv(I_vignette_df_raw,"../03_Data/raw_data/I_vignette_df_raw.csv", row.names = FALSE)
 ```
 
@@ -162,8 +164,8 @@ write.csv(CodeBook,"../02_Research_materials/Codebooks/I_vignette_CodeBook.csv",
 ```
 
 ```{r}
-## raw dataset with attentionc hecks
-I_vignette_df_raw <- Vignette_df %>% select(matches("finsit|occ|RecordedDate|mani|quit|year|month|found|coown|indu|locat|age|gender|edu|exp_cond|chal_4|threat_4|satis_4"))
+## raw dataset with attention checks
+I_vignette_df_raw <- Vignette_df %>% select(matches("ID|finsit|occ|RecordedDate|mani|quit|year|month|found|coown|indu|locat|age|gender|edu|exp_cond|chal_4|threat_4|satis_4"))
 ```
 
 
@@ -206,7 +208,7 @@ I_vignette_df_raw$t1timebuiss <- as.numeric(difftime(I_vignette_df_raw$RecordedD
 
 ```{r include = TRUE}
 ## Assign ID variable
-I_vignette_df_raw$ID = seq.int(nrow(I_vignette_df_raw)) 
+I_vignette_df_raw$attcheck = seq.int(nrow(I_vignette_df_raw)) 
 
 ### Attention checks
 I_vignette_df_raw_fails = I_vignette_df_raw %>% dplyr::select(chal_4,threat_4,satis_4)
@@ -219,12 +221,12 @@ att_3 <- I_vignette_df_raw[I_vignette_df_raw$satis_4 %in% c(1, 3, 4, 5, 6, 7), ]
 attention_fail <- rbind(att_1, att_2, att_3) %>%
   as_tibble(.)
 
-ID_vals <- data.frame(table(attention_fail$ID))
-Rows_fails <- attention_fail$ID %in% ID_vals[ID_vals$Freq > 0,1]
+ID_vals <- data.frame(table(attention_fail$attcheck))
+Rows_fails <- attention_fail$attcheck %in% ID_vals[ID_vals$Freq > 0,1]
 Att_fails <- attention_fail[Rows_fails,]
 
 ## exclude attention fails (two or more fails)
-I_vignette_df_raw <- I_vignette_df_raw[!(I_vignette_df_raw$ID %in% Att_fails$ID),]
+I_vignette_df_raw <- I_vignette_df_raw[!(I_vignette_df_raw$attcheck %in% Att_fails$attcheck),]
 
 cat("Number of T1 attention fails (at least one of three attention check items failed):", nrow(unique(Att_fails)) , "\n")
 cat("Number of participants after T1 attention fails removed:", nrow(I_vignette_df_raw) , "\n")
@@ -350,7 +352,7 @@ nrow(comp_dat)
 
 matches <- dplyr::matches
 
-comp_dat_single_item <- I_vignette_df_preproc %>% dplyr::select(dplyr::matches("finsit|exp_cond|t1timebuiss|coown|indu|age|gender|lang|edu|quitting1|locat|quitting "))  %>% remove_all_labels(.) %>% dplyr::select(-matches("UserLanguage|Q52_Page_Submit|Q53_Page_Submit|_TEXT|ifelse|age_1|LocationLatitude|LocationLongitude")) 
+comp_dat_single_item <- I_vignette_df_preproc %>% dplyr::select(dplyr::matches("ID|finsit|exp_cond|t1timebuiss|coown|indu|age|gender|lang|edu|quitting1|locat|quitting "))  %>% remove_all_labels(.) %>% dplyr::select(-matches("UserLanguage|Q52_Page_Submit|Q53_Page_Submit|_TEXT|ifelse|age_1|LocationLatitude|LocationLongitude")) 
 
   
 alph_dat <- comp_dat
@@ -434,6 +436,56 @@ sd(cond$mani)
 ```
 
 ## Hypothesis tests
+
+```{r}
+## Reliabilities 
+library("sjlabelled")
+library(lubridate)
+library(stringr)
+library(zoo)
+library(tidyverse)
+library("tidyverse")
+
+comp_dat <-  Vignette_df %>% dplyr::select(dplyr::matches("cope|mani|chal|threat|quit|satis|PANA")) %>% remove_all_labels(.)
+
+library(tidyr)
+nrow(comp_dat)
+
+matches <- dplyr::matches
+
+comp_dat_single_item <- Vignette_df %>% dplyr::select(dplyr::matches("ID|finsit|exp_cond|t1timebuiss|coown|indu|age|gender|lang|edu|quitting1|locat|quitting "))  %>% remove_all_labels(.) %>% dplyr::select(-matches("UserLanguage|Q52_Page_Submit|Q53_Page_Submit|_TEXT|ifelse|age_1|LocationLatitude|LocationLongitude")) 
+
+  
+alph_dat <- comp_dat
+
+comp_split <- comp_dat %>%
+  split.default(sub("_.*", "", names(comp_dat))) 
+
+alph_split <- alph_dat %>%
+  split.default(sub("_.*", "", names(alph_dat))) 
+
+comp <- purrr::map(comp_split, ~ rowMeans(.x), data = .x)
+alph <- purrr::map(alph_split, ~ psych::alpha(.x), data = .x) %>%
+  purrr::map(~ .x$total)
+
+# add demos
+comp_df_vig_robust <- as.data.frame(do.call("cbind", comp)) %>% cbind(., comp_dat_single_item)
+```
+
+```{r}
+## Robustness checks
+comp_df_vig
+comp_df_vig_robust
+
+df_drop <- comp_df_vig_robust[!comp_df_vig_robust$ID %in% comp_df_vig$ID,]
+
+
+t.test(df_drop$mani, comp_df_vig$mani, alternative = "two.sided", var.equal = FALSE)
+t.test(df_drop$quit, comp_df_vig$quit, alternative = "two.sided", var.equal = FALSE)
+
+sd(comp_df_vig$quit)
+```
+
 
 ### Fin. strain > Quit intention 
 

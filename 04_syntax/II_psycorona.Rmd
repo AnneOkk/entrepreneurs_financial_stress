@@ -13,9 +13,14 @@ output: html_document
 names(PsyCorona) <- gsub("PFS0", "fin_strain0", names(PsyCorona), fixed = TRUE)
 df <- PsyCorona
 
-df_e <- df %>% filter(!is.na(w4_employstatus_14))
+df_orig <- df %>% filter(!is.na(w4_employstatus_14))
 
-df_e <-  df_e[!is.na(df_e$w5_SE_quit),] 
+df_orig$ID <- seq.int(nrow(df_orig))
+
+df_e_dropouts <- df_orig %>% select(matches("w5_"))
+cat("Number of dropouts between T1 and T2:", nrow(df_orig) - nrow(df_e_dropouts[rowSums(is.na(df_e_dropouts)) != ncol(df_e_dropouts), ]))
+
+df_e <-  df_orig[!is.na(df_orig$w5_SE_quit),] 
 
 cat("Number of participants in the dataset:", nrow(df_e), "\n")
 
@@ -42,7 +47,7 @@ df_e$coded_country_fac <- factor(df_e$coded_country)
 df_e$coded_country_num <- as.numeric(df_e$coded_country_fac)
 
 II_psycorona_df_raw <- df_e %>%
-  dplyr::select( probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03, w5_SE_quit, SE_start_recode, age, gender, edu, coded_country_num, w5_SE_employees_dich, coded_country) 
+  dplyr::select(ID, probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03, w5_SE_quit, SE_start_recode, age, gender, edu, coded_country_num, w5_SE_employees_dich, coded_country) 
 
 write.csv(II_psycorona_df_raw,"../03_Data/raw_data/II_psycorona_df_raw.csv", row.names = FALSE)
 
@@ -52,7 +57,7 @@ write.csv(II_psycorona_df_raw,"../03_Data/raw_data/II_psycorona_df_raw.csv", row
 
 ```{r}
 library(labelled)
-
+library(sjlabelled)
 var_label(II_psycorona_df_raw$coded_country) <- "Country of residence"
 var_label(II_psycorona_df_raw$w5_SE_employees_dich) <- "Employees - yes or no?"
 val_labels(II_psycorona_df_raw$w5_SE_employees_dich) <- c("Yes" = 1, "No" = 0)
@@ -132,7 +137,7 @@ comp_dat <- II_psycorona_df_preproc %>%
   dplyr::select(probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03) 
 
 comp_singleitem <- II_psycorona_df_preproc %>%
-  dplyr::select(w5_SE_quit, SE_start_recode, age, gender, edu, coded_country_num, w5_SE_employees_dich) 
+  dplyr::select(ID, w5_SE_quit, SE_start_recode, age, gender, edu, coded_country_num, w5_SE_employees_dich) 
 
 alph_dat <- comp_dat
 
@@ -171,6 +176,7 @@ options(qwraps2_markup = "markdown")
 
 
 ```{r include = T, echo = T}
+library(janitor)
 tabyl(comp_df$gender)
 # Age overview
 II_psycorona_df_preproc$age_labeled <- names(attr(II_psycorona_df_preproc$age,"labels")[match(II_psycorona_df_preproc$age,attr(II_psycorona_df_preproc$age,"labels"))])
@@ -181,6 +187,10 @@ tabyl(II_psycorona_df_preproc$age)
 # Business age 
 mean(II_psycorona_df_preproc$SE_start_recode)
 sd(II_psycorona_df_preproc$SE_start_recode)
+
+# Percentage business age below two years
+nrow(II_psycorona_df_preproc[II_psycorona_df_preproc$SE_start_recode <= 1, ])/nrow(II_psycorona_df_preproc)*100
+
 
 # Country 
 library(dplyr)
@@ -283,8 +293,66 @@ library(xtable)
 print(xtable(corstar_select, type = "latex"), file = "../output/cor_comp_psycorona.tex")
 ```
 
+## Robustness check
+
+```{r}
+# Robustness check
+
+df_orig$SE_start_recode <- as.numeric(names(attr(df_orig$w5_SE_start,"labels")[match(df_orig$w5_SE_start,attr(df_orig$w5_SE_start,"labels"))]))
+df_orig$SE_start_recode <- 2020-df_orig$SE_start_recode
+
+# employees yes or no
+df_orig$w5_SE_employees_dich <- ifelse(df_orig$w5_SE_employees_1 > 0, 1, 0)
+
+# remove NA on relevant variables
+# model <- lm(w5_SE_quit ~ fin_strain +  age + gender + SE_start_recode , data = comp_df)
+comp_dat <- df_orig %>%
+  dplyr::select(probSolving01, probSolving02, probSolving03, fin_strain01, fin_strain02, fin_strain03) 
+
+comp_singleitem <- df_orig %>%
+  dplyr::select(ID, w5_SE_quit, age, gender, edu) 
+
+alph_dat <- comp_dat
+
+comp_split <- comp_dat %>%
+  split.default(sub("0.*", "", names(comp_dat))) 
+
+alph_split <- alph_dat %>%
+  split.default(sub("0.*", "", names(alph_dat))) 
+
+comp <- purrr::map(comp_split, ~ rowMeans(.x), data = .x)
+alph <- purrr::map(alph_split, ~ psych::alpha(.x), data = .x) %>%
+  purrr::map(~ .x$total)
+
+# add demos
+comp_df_robust <- as.data.frame(do.call("cbind", comp))
+
+comp_df_robust <- cbind(comp_df_robust, comp_singleitem) %>% remove_all_labels(.)
+```
+
+```{r}
+# Robustness test
+
+df_drop <- comp_df_robust[!comp_df_robust$ID %in% comp_df$ID,]
+
+# AGE
+t.test(df_drop$age, comp_df$age, alternative = "two.sided", var.equal = FALSE)
+
+# GENDER
+df_drop <- df_drop %>% naniar::replace_with_na(replace = list(gender = 3))
+gender_table <- rbind(table(df_drop$gender), table(comp_df$gender))
+# Perform chi-square test
+chisq_test <- chisq.test(gender_table)
+# Print the result
+print(chisq_test)
+
+# FINANCIAL STRESS
+t.test(df_drop$fin_strain, comp_df_sel$fin_strain, alternative = "two.sided", var.equal = FALSE)
+
+```
 
 ## Hypotheses tests
+
 
 ### Lagged
 
@@ -300,7 +368,9 @@ T1finstrain =~ fin_strain01 + fin_strain02 + fin_strain03
 T2quitint ~ T1finstrain + age + gender + SE_start_recode
          '
 medmodel_result <- sem(model, data = II_psycorona_df_preproc)
+summary(medmodel_result, fit.measures=TRUE, standardized = TRUE)
 
+medmodel_result <- sem(model, data = df_orig, missing = "fiml")
 summary(medmodel_result, fit.measures=TRUE, standardized = TRUE)
 ```
 
