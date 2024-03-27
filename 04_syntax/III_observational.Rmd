@@ -531,11 +531,7 @@ mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
 
 corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df, removeTriangle = "upper", result="none"))) 
 
-rownames(corstar_select) <- c("1. Financial stress", "2. Affective commitment", 
-                              "3. Continuance commitment", "4. Age", "5. Gender", "6. Coownership", "7. Business age", "8. Quit intention")
 
-colnames(corstar_select) <- c("Mean", "SD", "1.", "2.", "3.", 
-                              "4.", "5.", "6.", "7.")
 
 ```
 ```{r}
@@ -618,7 +614,7 @@ summary(step1, fit.measures = TRUE)
 
 out_df1 = medmodel(step= step1)
 
-semTools::runMI(model, 5, )
+
 ```
 
 ### Step 1: Multiple imputation
@@ -643,7 +639,11 @@ out1 <- semTools::runMI(model,
               miPackage="mice",
               fun="cfa",
               meanstructure = TRUE)
-summary(out1)
+(summary(out1))
+
+summary(out1, ci = TRUE, standardized = T)
+
+anova(out1)
 ```
 
 
@@ -671,7 +671,7 @@ out_df2 =  medmodel(step= step2)
 
 step2_fiml <- sem(model, data = imp_df, missing = "fiml", se = "bootstrap", bootstrap = 5000) # bootstrap set down to 100 to make estimation faster, 5000 in original  
 
-summary(step2, fit.measures = TRUE)
+summary(step2, fit.measures = TRUE, rsquare=T)
 summary(step2_fiml, fit.measures = TRUE)
 
 library(parameters)
@@ -690,13 +690,17 @@ model_parameters(
 ### Step 2: Multiple imputation
 
 ```{r}
-out1 <- semTools::runMI(model, 
+out2 <- semTools::runMI(model, 
               data=imp_df,
               m = 5, 
               miPackage="mice",
               fun="cfa",
               meanstructure = TRUE)
-summary(out1)
+summary(out2)
+
+summary(out2, ci = TRUE, standardized = T)
+
+anova(out2)
 ```
 
 ### Exploratory: Continuance commitment as mediator 
@@ -735,6 +739,21 @@ model_parameters(
   parameters = keep,
   verbose = TRUE
 )
+```
+
+### Exploratory: Multiple imputation Continuance commitment as mediator 
+
+```{r}
+out3 <- semTools::runMI(model, 
+              data=imp_df,
+              m = 5, 
+              miPackage="mice",
+              fun="cfa",
+              meanstructure = TRUE)
+
+summary(out3, ci = TRUE, standardized = T)
+
+anova(out3)
 ```
 
 
@@ -784,6 +803,22 @@ model_parameters(
 
 parameterEstimates(step3)
 ```
+
+### Exploratory Multiple imp 
+
+```{r}
+out4 <- semTools::runMI(model2, 
+              data=imp_df,
+              m = 5, 
+              miPackage="mice",
+              fun="cfa",
+              meanstructure = TRUE)
+
+summary(out4, ci = TRUE, standardized = T)
+
+anova(out4)
+```
+
 
 
 

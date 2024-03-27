@@ -14,6 +14,8 @@ names(PsyCorona) <- gsub("PFS0", "fin_strain0", names(PsyCorona), fixed = TRUE)
 df <- PsyCorona
 
 df_orig <- df %>% filter(!is.na(w4_employstatus_14))
+df_orig <- df_orig %>% filter(!is.na(fin_strain01))
+
 
 df_orig$ID <- seq.int(nrow(df_orig))
 
@@ -245,7 +247,7 @@ DT::datatable(
 #comp_df$date_diff <- as.numeric(comp_df$date_diff)
 
 # remove age, and irrelevant columns  
-comp_df_sel <- comp_df %>% dplyr::select(-dplyr::matches("probSolving|w5_lifeSat|coded_country_num|w5_fin_strain01|w7_SE_quit|w5_SE_employees_dich"))  %>% .[, c(1, 2, 4, 5, 3)]
+comp_df_sel <- comp_df %>% dplyr::select(-dplyr::matches("probSolving|w5_lifeSat|coded_country_num|w5_fin_strain01|w7_SE_quit|w5_SE_employees_dich|ID"))  %>% .[, c(1, 2, 4, 5, 3)]
 
 cor <- round(cor(comp_df_sel, use="pairwise.complete.obs"), 2)
 
@@ -265,21 +267,7 @@ mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
 
 corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df_sel, removeTriangle = "upper", result="none"))) 
 
-rownames(corstar_select) <- c("1. Fin. stress", "2. Quit intention", "3. Age", 
-                              "4. Gender", "5. Business age")
-
-colnames(corstar_select) <- c("Mean", "SD", "1.", "2.", "3.", 
-                              "4.")
-
-
-corstar_select %>%
-  DT::datatable(
-    extensions = 'Buttons', 
-    options = list(dom = 'Bfrtip', 
-                   buttons = c('excel', "csv"),
-                   pageLength = 15,
-                  lengthMenu = c(25, 50, 75, 94)))
-
+corstar_select
 ```
 
 ```{r}
@@ -368,10 +356,12 @@ T1finstrain =~ fin_strain01 + fin_strain02 + fin_strain03
 T2quitint ~ T1finstrain + age + gender + SE_start_recode
          '
 medmodel_result <- sem(model, data = II_psycorona_df_preproc)
-summary(medmodel_result, fit.measures=TRUE, standardized = TRUE)
+summary(medmodel_result, fit.measures=TRUE, standardized = TRUE, rsquare=T)
 
 medmodel_result <- sem(model, data = df_orig, missing = "fiml")
 summary(medmodel_result, fit.measures=TRUE, standardized = TRUE)
+
+
 ```
 
 ```{r}
@@ -402,3 +392,19 @@ model_parameters(
 ```
 
 
+```{r}
+
+
+
+out1 <- semTools::runMI(model, 
+              data=df_orig,
+              m = 5, 
+              miPackage="mice",
+              fun="cfa",
+              meanstructure = TRUE)
+(summary(out1))
+
+summary(out1, ci = TRUE, standardized = T)
+
+anova(out1)
+```

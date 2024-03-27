@@ -402,21 +402,7 @@ mean_sd <- as.data.frame(rbind(Mean, SD)) %>% t()
 
 corstar_select <- cbind(mean_sd, data.frame(corstars(comp_df, removeTriangle = "upper", result="none"))) 
 
-rownames(corstar_select) <- c("1. Financial stress", "2. Quit intention", "3. Age", 
-                              "4. Gender", "5. Business fin.sit", "6. Influence Covid-19", "7. Coownership", "8. Business age")
-
-colnames(corstar_select) <- c("Mean", "SD", "1.", "2.", "3.", 
-                              "4.", "5.", "6.", "7.")
-
-
-corstar_select %>%
-  DT::datatable(
-    extensions = 'Buttons', 
-    options = list(dom = 'Bfrtip', 
-                   buttons = c('excel', "csv"),
-                   pageLength = 15,
-                  lengthMenu = c(25, 50, 75, 94)))
-
+corstar_select
 ```
 ```{r}
 library(xtable)
